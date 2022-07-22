@@ -1,22 +1,19 @@
 package com.lavdevapp.chillax
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import androidx.lifecycle.*
-import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: AppViewModel
+    private val viewModel by viewModels<AppViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        viewModel = ViewModelProvider(this)[AppViewModel::class.java]
 
         val adapter = PlayersListAdapter(
             { player, isChecked -> viewModel.setItemChecked(player, isChecked) },

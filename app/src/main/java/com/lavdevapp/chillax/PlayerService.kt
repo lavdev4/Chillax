@@ -5,17 +5,11 @@ import android.os.CountDownTimer
 import android.content.Intent
 import android.os.IBinder
 
-class TimerService : Service() {
-    private var timer: CountDownTimer? = null
+// TODO: add in manifest
+class PlayerService : Service() {
+
     override fun onCreate() {
         super.onCreate()
-        timer = object : CountDownTimer(5000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                sendBroadcast(Intent())
-            }
-
-            override fun onFinish() {}
-        }
     }
 
     override fun onBind(intent: Intent): IBinder? {

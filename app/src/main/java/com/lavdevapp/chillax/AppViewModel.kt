@@ -18,10 +18,10 @@ class AppViewModel(
         PREFERENCES_NAME,
         AppCompatActivity.MODE_PRIVATE
     )
-    private val _playersList = stateHandle.getLiveData<List<Player>>(STATE_HANDLE_STATES_KEY)
-    val playersList: LiveData<List<Player>>
+    private val _tracksList = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
+    val tracksList: LiveData<List<Track>>
         get() {
-            return _playersList
+            return _tracksList
         }
     private var saveRequired = false
 
@@ -30,7 +30,7 @@ class AppViewModel(
     }
 
     private fun loadData() {
-        if (_playersList.value == null) {
+        if (_tracksList.value == null) {
             if (preferences.contains(PREFERENCES_STATES_KEY)) {
                 loadFromPrefs()
             } else {
@@ -39,10 +39,10 @@ class AppViewModel(
         } else Log.d("app_log", "data set from states")
     }
 
-    fun setItemChecked(item: Player, isChecked: Boolean) {
-        val newList = mutableListOf<Player>()
-        _playersList.value?.forEach {
-            if (it.playerName == item.playerName) {
+    fun setItemChecked(item: Track, isChecked: Boolean) {
+        val newList = mutableListOf<Track>()
+        _tracksList.value?.forEach {
+            if (it.trackName == item.trackName) {
                 newList.add(item.copy(switchState = isChecked))
             } else {
                 newList.add(it.copy())
@@ -50,12 +50,12 @@ class AppViewModel(
         }
         stateHandle[STATE_HANDLE_STATES_KEY] = newList
         saveRequired = true
-        Log.d("app_log", "view model: ${item.playerName} - item checked")
+        Log.d("app_log", "view model: ${item.trackName} - item checked")
     }
 
     fun setItemsEnabled(areEnabled: Boolean) {
-        val newList = mutableListOf<Player>()
-         _playersList.value?.forEach {
+        val newList = mutableListOf<Track>()
+         _tracksList.value?.forEach {
              newList.add(it.copy(switchEnabled = areEnabled))
         }
         stateHandle[STATE_HANDLE_STATES_KEY] = newList
@@ -65,7 +65,7 @@ class AppViewModel(
 
     fun saveData() {
         if (saveRequired) {
-            _playersList.value?.let {
+            _tracksList.value?.let {
                 val json = serialize(it)
                 preferences.edit().putString(PREFERENCES_STATES_KEY, json).apply()
             }
@@ -82,21 +82,21 @@ class AppViewModel(
     }
 
     private fun loadFromDefaultStates() {
-        stateHandle[STATE_HANDLE_STATES_KEY] = DefaultPlayersStates.players
+        stateHandle[STATE_HANDLE_STATES_KEY] = DefaultTracksStates.tracks
         Log.d("app_log", "data set from stock")
     }
 
-    private fun serialize(data: List<Player>): String {
-        val type = Types.newParameterizedType(List::class.java, Player::class.java)
-        val json = moshi.adapter<List<Player>>(type).toJson(data)
+    private fun serialize(data: List<Track>): String {
+        val type = Types.newParameterizedType(List::class.java, Track::class.java)
+        val json = moshi.adapter<List<Track>>(type).toJson(data)
         Log.d("app_log", "serialized json: $json")
         return json
     }
 
-    private fun deserialize(json: String): List<Player> {
-        val type = Types.newParameterizedType(List::class.java, Player::class.java)
-        val list = moshi.adapter<List<Player>>(type).fromJson(json)
-        Log.d("app_log", "deserialized list: ${list!![0].playerName} - ${list[0].switchState}")
+    private fun deserialize(json: String): List<Track> {
+        val type = Types.newParameterizedType(List::class.java, Track::class.java)
+        val list = moshi.adapter<List<Track>>(type).fromJson(json)
+        Log.d("app_log", "deserialized list: ${list!![0].trackName} - ${list[0].switchState}")
         return list
     }
 

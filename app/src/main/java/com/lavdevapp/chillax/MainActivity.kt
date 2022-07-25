@@ -15,19 +15,21 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val adapter = PlayersListAdapter(
-            { player, isChecked -> viewModel.setItemChecked(player, isChecked) },
+        val adapter = TracksListAdapter(
+            { track, isChecked -> viewModel.setItemChecked(track, isChecked) },
             { areEnabled -> viewModel.setItemsEnabled(areEnabled) }
         )
         binding.playersRecyclerView.adapter = adapter
 
-        viewModel.playersList.observe(this) {
-            adapter.submitList(it)
-            Log.d("app_log", "list submitted")
-        }
-
         binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
             adapter.setItemsEnabled(isChecked)
+        }
+        // TODO: fix
+        //binding.mainSwitch.isChecked = false
+
+        viewModel.tracksList.observe(this) {
+            adapter.submitList(it)
+            Log.d("app_log", "list submitted")
         }
     }
 

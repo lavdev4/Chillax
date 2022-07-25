@@ -17,6 +17,9 @@ data class Track(
     val switchEnabled: Boolean = false
 ) : Parcelable {
 
+    @Json(ignore = true)
+    val parsedUri: Uri = Uri.parse(trackUri)
+
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,

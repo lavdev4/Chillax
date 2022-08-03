@@ -59,7 +59,6 @@ class AppViewModel(
              newList.add(it.copy(switchEnabled = areEnabled))
         }
         stateHandle[STATE_HANDLE_STATES_KEY] = newList
-        saveRequired = true
         Log.d("app_log", "view model: - items enabled $areEnabled")
     }
 

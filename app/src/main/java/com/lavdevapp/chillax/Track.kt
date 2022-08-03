@@ -14,7 +14,7 @@ data class Track(
     val trackName: String,
     val trackUri: String,
     val switchState: Boolean = false,
-    val switchEnabled: Boolean = false
+    @Json(ignore = true) val switchEnabled: Boolean = false
 ) : Parcelable {
 
     @Json(ignore = true)

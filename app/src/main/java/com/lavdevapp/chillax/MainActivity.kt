@@ -8,61 +8,34 @@ import android.os.IBinder
 import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel by viewModels<AppViewModel>()
-    private lateinit var service: PlayersService
-    private var bound = false
+    private lateinit var playersService: PlayersService
+    private lateinit var playersServiceIntent: Intent
+    private lateinit var serviceConnection: ServiceConnection
+    private lateinit var tracksListAdapter: TracksListAdapter
+    private var serviceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("app_log", "--------------------------------")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupAdapter()
+        observeTrackList()
+        setupMainSwitchListener()
+    }
 
-        val adapter = TracksListAdapter(
-            { track, isChecked -> viewModel.setItemChecked(track, isChecked) },
-            { areEnabled -> viewModel.setItemsEnabled(areEnabled) }
-        )
-        binding.playersRecyclerView.adapter = adapter
-
-        binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
-            adapter.setItemsEnabled(isChecked)
-        }
-        // TODO: fix
-        //binding.mainSwitch.isChecked = false
-
-        //observe was here
-
-        //------------------------------------------------------------
-
-        val connection = object : ServiceConnection {
-
-            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                this@MainActivity.service = (service as PlayersServiceBinder).service
-                bound = true
-            }
-
-            override fun onServiceDisconnected(name: ComponentName?) {
-                bound = false
-            }
-        }
-
-        val intent = Intent(this, PlayersService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        applicationContext.bindService(intent, connection, 0)
-
-        viewModel.tracksList.observe(this) {
-            adapter.submitList(it)
-            if (bound) {
-                service.initiatePlaylist(it)
-            }
-            Log.d("app_log", "list submitted")
-        }
+    override fun onStart() {
+        super.onStart()
+        setupServiceConnection()
+        playersServiceIntent = Intent(this, PlayersService::class.java)
+        applicationContext.bindService(playersServiceIntent, serviceConnection, 0)
+        applicationContext.startService(playersServiceIntent)
     }
 
     override fun onPause() {
@@ -70,5 +43,50 @@ class MainActivity : AppCompatActivity() {
             viewModel.saveData()
         }
         super.onPause()
+    }
+
+    override fun onStop() {
+        if (serviceBound && !playersService.isActive) {
+            applicationContext.stopService(intent)
+        }
+        applicationContext.unbindService(serviceConnection)
+        super.onStop()
+    }
+
+    private fun setupAdapter() {
+        tracksListAdapter = TracksListAdapter(
+            { track, isChecked -> viewModel.setItemChecked(track, isChecked) },
+            { areEnabled -> viewModel.setItemsEnabled(areEnabled) }
+        )
+        binding.playersRecyclerView.adapter = tracksListAdapter
+    }
+
+    private fun observeTrackList() {
+        viewModel.tracksList.observe(this) {
+            tracksListAdapter.submitList(it)
+            if (serviceBound) {
+                playersService.initiatePlaylist(it)
+            }
+            Log.d("app_log", "list submitted")
+        }
+    }
+
+    private fun setupMainSwitchListener() {
+        binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
+            tracksListAdapter.setItemsEnabled(isChecked)
+        }
+    }
+
+    private fun setupServiceConnection() {
+        serviceConnection = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                this@MainActivity.playersService = (service as PlayersServiceBinder).service
+                serviceBound = true
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                serviceBound = false
+            }
+        }
     }
 }

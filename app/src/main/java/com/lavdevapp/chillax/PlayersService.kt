@@ -13,61 +13,86 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 
-// TODO: add in manifest
 class PlayersService : Service() {
     private val activeMediaPlayers = mutableListOf<MediaPlayer>()
+    val isActive = activeMediaPlayers.isNotEmpty()
 
     override fun onCreate() {
-        startForeground(SERVICE_NOTIFICATION_ID, createNotification())
         Log.d("app_log", "service started")
         super.onCreate()
     }
 
-    override fun onBind(intent: Intent): IBinder {
-        return PlayersServiceBinder()
-    }
-
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         Log.d("app_log", "service start command")
-        return super.onStartCommand(intent, flags, startId)
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         Log.d("app_log", "service destroyed")
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent): IBinder {
+        Log.d("app_log", "service bound")
+        return PlayersServiceBinder()
     }
 
     fun initiatePlaylist(trackList: List<Track>) {
-        deactivateCurrentPlaylist()
-        trackList.forEach { track ->
-            if (track.switchEnabled && track.switchState) {
-                val mediaPlayer = MediaPlayer().apply {
-                    setDataSource(this@PlayersService, track.parsedUri)
-                    setOnPreparedListener {
-                        it.isLooping = true
-                        it.start()
-                    }
-                    prepareAsync()
-                }
-                Log.d("app_log", "player $mediaPlayer, with track name ${track.trackName} started")
-                activeMediaPlayers.add(mediaPlayer)
-            }
-        }
+        stopPlayersIfActive()
+        initPlayers(trackList)
+        startPlayersIfActive()
         Log.d("app_log", "playlist activated in service")
     }
 
-    private fun deactivateCurrentPlaylist() {
-        activeMediaPlayers.forEach {
-            it.stop()
-            it.release()
+    private fun stopPlayersIfActive() {
+        if (activeMediaPlayers.isNotEmpty()) {
+            activeMediaPlayers.forEach {
+                it.stop()
+                it.release()
+            }
+            activeMediaPlayers.clear()
         }
-        activeMediaPlayers.clear()
-        Log.d("app_log", "active media players - $activeMediaPlayers")
         Log.d("app_log", "playlist cleared in service")
     }
 
-    private fun createNotification(): Notification {
-        // TODO: test lower notification importance/priority
+    private fun initPlayers(trackList: List<Track>) {
+        trackList.forEach { track ->
+            if (track.switchEnabled && track.switchState) {
+                val mediaPlayer = initMediaPlayer(track.parsedUri)
+                activeMediaPlayers.add(mediaPlayer)
+                Log.d("app_log", "player init with track name: ${track.trackName}")
+            }
+        }
+    }
+
+    private fun startPlayersIfActive() {
+        if (activeMediaPlayers.isNotEmpty()) {
+            createNotificationChannel()
+            startForeground(SERVICE_NOTIFICATION_ID, createNotification())
+            //needed to set notification title, text, icon etc.
+            updateNotification()
+            Log.d("app_log", "foreground started")
+            activeMediaPlayers.forEach {
+                //starts players on callback
+                it.prepareAsync()
+                Log.d("app_log", "player $it started")
+            }
+        } else {
+            stopForeground(true)
+            Log.d("app_log", "foreground stopped")
+        }
+    }
+
+    private fun initMediaPlayer(trackUri: Uri): MediaPlayer {
+        return MediaPlayer().apply {
+            setDataSource(this@PlayersService, trackUri)
+            setOnPreparedListener { it.start() }
+        }.also {
+            it.isLooping = true
+        }
+    }
+
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
                 SERVICE_NOTIFICATION_CHANNEL_ID,
@@ -76,11 +101,19 @@ class PlayersService : Service() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(notificationChannel)
         }
+    }
+
+    private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, SERVICE_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(resources.getString(R.string.app_name))
             .setContentText(getString(R.string.foreground_service_notification_text))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
+
+    private fun updateNotification() {
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(SERVICE_NOTIFICATION_ID, createNotification())
     }
 
     inner class PlayersServiceBinder : Binder() {

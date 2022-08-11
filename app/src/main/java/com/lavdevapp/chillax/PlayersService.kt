@@ -9,13 +9,20 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
+import android.os.CountDownTimer
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import kotlin.math.roundToInt
 
 class PlayersService : Service() {
     private val activeMediaPlayers = mutableListOf<MediaPlayer>()
     val isActive = activeMediaPlayers.isNotEmpty()
+    private val _countDownTimeLeft by lazy { MutableLiveData<String>() }
+    val countDownTimeLeft: LiveData<String>
+        get() = _countDownTimeLeft
 
     override fun onCreate() {
         Log.d("app_log", "service started")
@@ -42,6 +49,36 @@ class PlayersService : Service() {
         initPlayers(trackList)
         startPlayersIfActive()
         Log.d("app_log", "playlist activated in service")
+    }
+
+    fun startTimer(hour: Int, minute: Int) {
+        object : CountDownTimer(timeToMillis(hour, minute), 60000) {
+            override fun onTick(remainigMillis: Long) {
+                _countDownTimeLeft.value = millisToTime(remainigMillis)
+                Log.d("app_timer", "on tick")
+            }
+
+            override fun onFinish() {
+                TODO("Not yet implemented")
+            }
+        }.start()
+        Log.d("app_timer", "timer started")
+    }
+
+
+    private fun timeToMillis(hour: Int, minute: Int): Long {
+        val millis = hour * 3600000L + minute * 60000L
+        Log.d("app_timer", "millis: $millis")
+        return millis
+    }
+
+    private fun millisToTime(millis: Long): String {
+        val totalMinutes = millis / 60000
+        val hour = totalMinutes / 60
+        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt()
+        val time = resources.getString(R.string.timer_text_format, hour, minute)
+        Log.d("app_timer", "time: $time")
+        return time
     }
 
     private fun stopPlayersIfActive() {

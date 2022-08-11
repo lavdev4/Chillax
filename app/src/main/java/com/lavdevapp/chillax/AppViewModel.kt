@@ -20,9 +20,7 @@ class AppViewModel(
     )
     private val _tracksList = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
     val tracksList: LiveData<List<Track>>
-        get() {
-            return _tracksList
-        }
+        get() = _tracksList
     private var saveRequired = false
 
     init {

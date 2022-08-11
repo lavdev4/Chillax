@@ -1,17 +1,20 @@
 package com.lavdevapp.chillax
 
+import android.app.TimePickerDialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.TimePicker
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LiveData
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private lateinit var binding: ActivityMainBinding
     private val viewModel by viewModels<AppViewModel>()
     private lateinit var playersService: PlayersService
@@ -28,14 +31,15 @@ class MainActivity : AppCompatActivity() {
         setupAdapter()
         observeTrackList()
         setupMainSwitchListener()
+        setupTimerClickListener()
     }
 
     override fun onStart() {
         super.onStart()
         setupServiceConnection()
         playersServiceIntent = Intent(this, PlayersService::class.java)
-        applicationContext.bindService(playersServiceIntent, serviceConnection, 0)
         applicationContext.startService(playersServiceIntent)
+        applicationContext.bindService(playersServiceIntent, serviceConnection, 0)
     }
 
     override fun onPause() {
@@ -51,6 +55,16 @@ class MainActivity : AppCompatActivity() {
         }
         applicationContext.unbindService(serviceConnection)
         super.onStop()
+    }
+
+    override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
+        if (serviceBound) {
+            playersService.startTimer(hour, minute)
+            playersService.countDownTimeLeft.observe(this) {
+                binding.timerView.text = it
+                Log.d("app_timer", "timer text set: $it")
+            }
+        }
     }
 
     private fun setupAdapter() {
@@ -74,6 +88,13 @@ class MainActivity : AppCompatActivity() {
     private fun setupMainSwitchListener() {
         binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
             tracksListAdapter.setItemsEnabled(isChecked)
+        }
+    }
+
+    private fun setupTimerClickListener() {
+        binding.timerView.setOnClickListener {
+            // TODO: new instance every call ??
+            TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
         }
     }
 

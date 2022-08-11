@@ -7,10 +7,10 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.View
 import android.widget.TimePicker
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LiveData
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
@@ -30,8 +30,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         setContentView(binding.root)
         setupAdapter()
         observeTrackList()
+        observeTimer()
         setupMainSwitchListener()
         setupTimerClickListener()
+        setupTimerRefreshButton()
     }
 
     override fun onStart() {
@@ -43,27 +45,20 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     override fun onPause() {
-        if (!isChangingConfigurations) {
-            viewModel.saveData()
-        }
+        if (!isChangingConfigurations) viewModel.saveData()
         super.onPause()
     }
 
     override fun onStop() {
-        if (serviceBound && !playersService.isActive) {
-            applicationContext.stopService(intent)
-        }
+        if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
         applicationContext.unbindService(serviceConnection)
         super.onStop()
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
-        if (serviceBound) {
+        if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
-            playersService.countDownTimeLeft.observe(this) {
-                binding.timerView.text = it
-                Log.d("app_timer", "timer text set: $it")
-            }
+            binding.timerRefreshButton.visibility = View.VISIBLE
         }
     }
 
@@ -78,10 +73,15 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private fun observeTrackList() {
         viewModel.tracksList.observe(this) {
             tracksListAdapter.submitList(it)
-            if (serviceBound) {
-                playersService.initiatePlaylist(it)
-            }
+            if (serviceBound) playersService.initiatePlaylist(it)
             Log.d("app_log", "list submitted")
+        }
+    }
+
+    private fun observeTimer() {
+        viewModel.timerValue.observe(this) {
+            binding.timerView.text = it
+            Log.d("app_timer", "timer text set: $it")
         }
     }
 
@@ -98,10 +98,20 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         }
     }
 
+    private fun setupTimerRefreshButton() {
+        binding.timerRefreshButton.setOnClickListener {
+            if (serviceBound) playersService.stopTimer()
+            it.visibility = View.GONE
+        }
+    }
+
     private fun setupServiceConnection() {
         serviceConnection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                this@MainActivity.playersService = (service as PlayersServiceBinder).service
+                playersService = (service as PlayersServiceBinder).service
+                playersService.countDownTimeLeft.observe(this@MainActivity) {
+                    viewModel.setTimerValue(it)
+                }
                 serviceBound = true
             }
 

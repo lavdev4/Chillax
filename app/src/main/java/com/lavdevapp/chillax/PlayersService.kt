@@ -19,10 +19,16 @@ import kotlin.math.roundToInt
 
 class PlayersService : Service() {
     private val activeMediaPlayers = mutableListOf<MediaPlayer>()
-    val isActive = activeMediaPlayers.isNotEmpty()
-    private val _countDownTimeLeft by lazy { MutableLiveData<String>() }
+    private var timer: CountDownTimer? = null
+    private val _countDownTimeLeft = MutableLiveData<String>()
     val countDownTimeLeft: LiveData<String>
         get() = _countDownTimeLeft
+    private val playersActive: Boolean
+        get() { return activeMediaPlayers.isNotEmpty() }
+    private val timerActive: Boolean
+        get() { return timer != null }
+    val isWorking: Boolean
+        get() { return playersActive || timerActive }
 
     override fun onCreate() {
         Log.d("app_log", "service started")
@@ -46,13 +52,13 @@ class PlayersService : Service() {
 
     fun initiatePlaylist(trackList: List<Track>) {
         stopPlayersIfActive()
-        initPlayers(trackList)
-        startPlayersIfActive()
+        prepareAndStartPlayers(trackList)
         Log.d("app_log", "playlist activated in service")
     }
 
     fun startTimer(hour: Int, minute: Int) {
-        object : CountDownTimer(timeToMillis(hour, minute), 60000) {
+        startForeground()
+        timer = object : CountDownTimer(timeToMillis(hour, minute), 60000) {
             override fun onTick(remainigMillis: Long) {
                 _countDownTimeLeft.value = millisToTime(remainigMillis)
                 Log.d("app_timer", "on tick")
@@ -65,6 +71,12 @@ class PlayersService : Service() {
         Log.d("app_timer", "timer started")
     }
 
+    fun stopTimer() {
+        timer?.cancel()
+        timer = null
+        _countDownTimeLeft.value = resources.getString(R.string.timer_default_text)
+        if (!playersActive) stopForeground()
+    }
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
         val millis = hour * 3600000L + minute * 60000L
@@ -82,17 +94,15 @@ class PlayersService : Service() {
     }
 
     private fun stopPlayersIfActive() {
-        if (activeMediaPlayers.isNotEmpty()) {
-            activeMediaPlayers.forEach {
-                it.stop()
-                it.release()
-            }
-            activeMediaPlayers.clear()
+        if (activeMediaPlayers.isNotEmpty()) activeMediaPlayers.forEach {
+            it.stop()
+            it.release()
         }
+        activeMediaPlayers.clear()
         Log.d("app_log", "playlist cleared in service")
     }
 
-    private fun initPlayers(trackList: List<Track>) {
+    private fun prepareAndStartPlayers(trackList: List<Track>) {
         trackList.forEach { track ->
             if (track.switchEnabled && track.switchState) {
                 val mediaPlayer = initMediaPlayer(track.parsedUri)
@@ -100,22 +110,20 @@ class PlayersService : Service() {
                 Log.d("app_log", "player init with track name: ${track.trackName}")
             }
         }
+        startPlayers()
     }
 
-    private fun startPlayersIfActive() {
+    private fun startPlayers() {
         if (activeMediaPlayers.isNotEmpty()) {
-            createNotificationChannel()
-            startForeground(SERVICE_NOTIFICATION_ID, createNotification())
-            //needed to set notification title, text, icon etc.
-            updateNotification()
+            startForeground()
             Log.d("app_log", "foreground started")
             activeMediaPlayers.forEach {
-                //starts players on callback
+                //starts players on prepared callback
                 it.prepareAsync()
                 Log.d("app_log", "player $it started")
             }
         } else {
-            stopForeground(true)
+            if (!timerActive) stopForeground()
             Log.d("app_log", "foreground stopped")
         }
     }
@@ -129,12 +137,23 @@ class PlayersService : Service() {
         }
     }
 
+    private fun startForeground() {
+        createNotificationChannel()
+        startForeground(SERVICE_NOTIFICATION_ID, createNotification())
+        updateNotification()
+    }
+
+    private fun stopForeground() {
+        stopForeground(true)
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
                 SERVICE_NOTIFICATION_CHANNEL_ID,
                 SERVICE_NOTIFICATION_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW)
+                NotificationManager.IMPORTANCE_LOW
+            )
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(notificationChannel)
         }
@@ -159,8 +178,10 @@ class PlayersService : Service() {
     }
 
     companion object {
-        private const val SERVICE_NOTIFICATION_CHANNEL_ID = "players_service_notification_channel_id"
-        private const val SERVICE_NOTIFICATION_CHANNEL_NAME = "players_service_notification_channel_name"
+        private const val SERVICE_NOTIFICATION_CHANNEL_ID =
+            "players_service_notification_channel_id"
+        private const val SERVICE_NOTIFICATION_CHANNEL_NAME =
+            "players_service_notification_channel_name"
         private const val SERVICE_NOTIFICATION_ID = 1
     }
 }

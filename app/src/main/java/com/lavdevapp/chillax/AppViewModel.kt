@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
@@ -21,6 +22,9 @@ class AppViewModel(
     private val _tracksList = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
     val tracksList: LiveData<List<Track>>
         get() = _tracksList
+    private val _timerValue = MutableLiveData<String>()
+    val timerValue: LiveData<String>
+        get() = _timerValue
     private var saveRequired = false
 
     init {
@@ -58,6 +62,10 @@ class AppViewModel(
         }
         stateHandle[STATE_HANDLE_STATES_KEY] = newList
         Log.d("app_log", "view model: - items enabled $areEnabled")
+    }
+
+    fun setTimerValue(value: String) {
+        _timerValue.value = value
     }
 
     fun saveData() {

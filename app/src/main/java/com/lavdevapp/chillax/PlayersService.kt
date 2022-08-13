@@ -15,14 +15,15 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModelProvider
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
     private val activeMediaPlayers = mutableListOf<MediaPlayer>()
     private var timer: CountDownTimer? = null
-    private val _countDownTimeLeft = MutableLiveData<String>()
-    val countDownTimeLeft: LiveData<String>
-        get() = _countDownTimeLeft
+    private val _timerStatus = MutableLiveData<TimerStatus>()
+    val timerStatus: LiveData<TimerStatus>
+        get() = _timerStatus
     private val playersActive: Boolean
         get() { return activeMediaPlayers.isNotEmpty() }
     private val timerActive: Boolean
@@ -58,36 +59,53 @@ class PlayersService : Service() {
 
     fun startTimer(hour: Int, minute: Int) {
         startForeground()
-        timer = object : CountDownTimer(timeToMillis(hour, minute), 60000) {
+        timer = object : CountDownTimer(timeToMillis(hour, minute), 1000) {
             override fun onTick(remainigMillis: Long) {
-                _countDownTimeLeft.value = millisToTime(remainigMillis)
+                _timerStatus.value = TimerStatus(millisToTime(remainigMillis), timerActive)
                 Log.d("app_timer", "on tick")
             }
 
             override fun onFinish() {
-                TODO("Not yet implemented")
+                stopTimer(true)
+                Log.d("app_timer", "on finish")
             }
         }.start()
         Log.d("app_timer", "timer started")
     }
 
-    fun stopTimer() {
-        timer?.cancel()
-        timer = null
-        _countDownTimeLeft.value = resources.getString(R.string.timer_default_text)
-        if (!playersActive) stopForeground()
+    fun stopTimer(isFinished: Boolean = false) {
+        if (isFinished) {
+            timer = null
+            stopPlayersIfActive()
+            _timerStatus.value = TimerStatus(
+                resources.getString(R.string.timer_default_text),
+                isActive = false,
+                isFinished = true
+            )
+            stopForeground()
+        } else {
+            timer?.cancel()
+            timer = null
+            _timerStatus.value = TimerStatus(resources.getString(R.string.timer_default_text), false)
+            if (!playersActive) stopForeground()
+        }
     }
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
-        val millis = hour * 3600000L + minute * 60000L
+//        val millis = hour * 3600000L + minute * 60000L
+        val millis = hour * 60000L + minute * 1000L
         Log.d("app_timer", "millis: $millis")
         return millis
     }
 
     private fun millisToTime(millis: Long): String {
-        val totalMinutes = millis / 60000
+//        val totalMinutes = millis / 60000
+//        val hour = totalMinutes / 60
+//        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
+        val totalMinutes = millis / 1000
         val hour = totalMinutes / 60
-        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt()
+        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
+
         val time = resources.getString(R.string.timer_text_format, hour, minute)
         Log.d("app_timer", "time: $time")
         return time
@@ -176,6 +194,12 @@ class PlayersService : Service() {
         val service: PlayersService
             get() = this@PlayersService
     }
+
+    data class TimerStatus(
+        val currentTime: String,
+        val isActive: Boolean,
+        val isFinished: Boolean = false
+    )
 
     companion object {
         private const val SERVICE_NOTIFICATION_CHANNEL_ID =

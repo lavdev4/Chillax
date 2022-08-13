@@ -11,16 +11,16 @@ import android.view.View
 import android.widget.TimePicker
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private lateinit var binding: ActivityMainBinding
     private val viewModel by viewModels<AppViewModel>()
-    private lateinit var playersService: PlayersService
-    private lateinit var playersServiceIntent: Intent
-    private lateinit var serviceConnection: ServiceConnection
     private lateinit var tracksListAdapter: TracksListAdapter
+    private lateinit var playersService: PlayersService
+    private lateinit var serviceConnection: ServiceConnection
     private var serviceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,15 +33,16 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         observeTimer()
         setupMainSwitchListener()
         setupTimerClickListener()
-        setupTimerRefreshButton()
+        setupTimerRefreshButtonClickListener()
     }
 
     override fun onStart() {
         super.onStart()
         setupServiceConnection()
-        playersServiceIntent = Intent(this, PlayersService::class.java)
-        applicationContext.startService(playersServiceIntent)
-        applicationContext.bindService(playersServiceIntent, serviceConnection, 0)
+        Intent(this, PlayersService::class.java).also {
+            applicationContext.startService(it)
+            applicationContext.bindService(it, serviceConnection, 0)
+        }
     }
 
     override fun onPause() {
@@ -50,15 +51,14 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     override fun onStop() {
-        if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
         applicationContext.unbindService(serviceConnection)
+        if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
         super.onStop()
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
-            binding.timerRefreshButton.visibility = View.VISIBLE
         }
     }
 
@@ -79,43 +79,52 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun observeTimer() {
-        viewModel.timerValue.observe(this) {
-            binding.timerView.text = it
-            Log.d("app_timer", "timer text set: $it")
+        viewModel.timerStatus.observe(this) {
+            with(binding) {
+                timerView.text = it.currentTime
+                timerRefreshButton.visibility = if (it.isActive) View.VISIBLE else View.GONE
+                if (it.isFinished) mainSwitch.isChecked = false
+            }
+            Log.d("app_timer", "timer text set: ${it.currentTime}")
         }
     }
 
     private fun setupMainSwitchListener() {
-        binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
-            tracksListAdapter.setItemsEnabled(isChecked)
+        with(binding.mainSwitch) {
+            setOnCheckedChangeListener { _, isChecked ->
+                tracksListAdapter.setItemsEnabled(isChecked)
+            }
+            // TODO: during to the isSaveEnabled false is loosing state on rotating
+            isSaveEnabled = false
         }
     }
 
     private fun setupTimerClickListener() {
         binding.timerView.setOnClickListener {
-            // TODO: new instance every call ??
             TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
         }
     }
 
-    private fun setupTimerRefreshButton() {
+    private fun setupTimerRefreshButtonClickListener() {
         binding.timerRefreshButton.setOnClickListener {
             if (serviceBound) playersService.stopTimer()
-            it.visibility = View.GONE
         }
     }
 
     private fun setupServiceConnection() {
         serviceConnection = object : ServiceConnection {
-            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                playersService = (service as PlayersServiceBinder).service
-                playersService.countDownTimeLeft.observe(this@MainActivity) {
-                    viewModel.setTimerValue(it)
-                }
+            private val observer = Observer<PlayersService.TimerStatus> {
+                viewModel.setTimerStatus(it)
+            }
+
+            override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                playersService = (binder as PlayersServiceBinder).service
+                playersService.timerStatus.observe(this@MainActivity, observer)
                 serviceBound = true
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
+                playersService.timerStatus.removeObserver(observer)
                 serviceBound = false
             }
         }

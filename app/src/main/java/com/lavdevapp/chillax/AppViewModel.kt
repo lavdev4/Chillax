@@ -22,9 +22,9 @@ class AppViewModel(
     private val _tracksList = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
     val tracksList: LiveData<List<Track>>
         get() = _tracksList
-    private val _timerValue = MutableLiveData<String>()
-    val timerValue: LiveData<String>
-        get() = _timerValue
+    private val _timerStatus = MutableLiveData<PlayersService.TimerStatus>()
+    val timerStatus: LiveData<PlayersService.TimerStatus>
+        get() = _timerStatus
     private var saveRequired = false
 
     init {
@@ -64,8 +64,8 @@ class AppViewModel(
         Log.d("app_log", "view model: - items enabled $areEnabled")
     }
 
-    fun setTimerValue(value: String) {
-        _timerValue.value = value
+    fun setTimerStatus(value: PlayersService.TimerStatus) {
+        _timerStatus.value = value
     }
 
     fun saveData() {
@@ -109,5 +109,10 @@ class AppViewModel(
         const val PREFERENCES_NAME = "app_prefs"
         const val STATE_HANDLE_STATES_KEY = "state_handle_states"
         const val PREFERENCES_STATES_KEY = "preferences_states"
+    }
+
+    override fun onCleared() {
+        Log.d("app_log", "view model cleared")
+        super.onCleared()
     }
 }

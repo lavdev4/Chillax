@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_gravity="end"
-            android:layout_marginEnd="10dp">
+            android:layout_marginEnd="22dp">
 
             <ImageButton
                 android:id="@+id/timer_refresh_button"
@@ -40,16 +40,20 @@
                 android:id="@+id/timer_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/timer_default_text"
                 android:padding="8dp"
                 android:textSize="20sp"
-                android:layout_marginEnd="20dp"
-                android:layout_gravity="center"/>
+                android:layout_marginEnd="30dp"
+                android:layout_gravity="center"
+                android:visibility="gone"/>
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <ToggleButton
                 android:id="@+id/main_switch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:textOn=""
+                android:textOff=""
+                android:background="@drawable/ic_main_switch_selector"
+                android:layout_gravity="center"/>
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -63,4 +67,16 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         tools:listitem="@layout/adapter_players_list"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/timer_start_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="30dp"
+        android:src="@drawable/ic_start_timer_button"
+        app:maxImageSize="30dp"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="ContentDescription" />
 </androidx.constraintlayout.widget.ConstraintLayout>

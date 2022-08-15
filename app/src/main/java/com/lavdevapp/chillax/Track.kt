@@ -23,7 +23,6 @@ data class Track(
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,
-        parcel.readByte() != 0.toByte(),
         parcel.readByte() != 0.toByte()
     )
 
@@ -33,7 +32,6 @@ data class Track(
                 writeString(trackName)
                 writeString(trackUri)
                 writeByte(if (switchState) 1 else 0)
-                writeByte(if (switchEnabled) 1 else 0)
             }
         }
     }

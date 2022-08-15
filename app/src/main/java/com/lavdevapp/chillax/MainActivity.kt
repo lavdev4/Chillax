@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.TimePicker
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
@@ -29,11 +30,9 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupAdapter()
-        observeTrackList()
-        observeTimer()
-        setupMainSwitchListener()
-        setupTimerClickListener()
-        setupTimerRefreshButtonClickListener()
+        setupMainSwitch()
+        restoreMainSwitchState()
+        setupTimer()
     }
 
     override fun onStart() {
@@ -51,8 +50,8 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     override fun onStop() {
-        applicationContext.unbindService(serviceConnection)
         if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
+        applicationContext.unbindService(serviceConnection)
         super.onStop()
     }
 
@@ -63,52 +62,65 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun setupAdapter() {
-        tracksListAdapter = TracksListAdapter(
-            { track, isChecked -> viewModel.setItemChecked(track, isChecked) },
-            { areEnabled -> viewModel.setItemsEnabled(areEnabled) }
-        )
+        tracksListAdapter = TracksListAdapter { track, isChecked ->
+            viewModel.setItemChecked(track, isChecked)
+        }
         binding.playersRecyclerView.adapter = tracksListAdapter
+        observeTrackListState()
     }
 
-    private fun observeTrackList() {
-        viewModel.tracksList.observe(this) {
-            tracksListAdapter.submitList(it)
-            if (serviceBound) playersService.initiatePlaylist(it)
-            Log.d("app_log", "list submitted")
+    private fun setupMainSwitch() {
+        with(binding.mainSwitch) {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewModel.setMainSwitchState(isChecked)
+                Log.d("app_log", "main switch checked $isChecked")
+            }
+            isSaveEnabled = false
         }
     }
 
-    private fun observeTimer() {
+    private fun setupTimer() {
+        with(binding){
+            timerStartButton.setOnClickListener {
+                if (!timerView.isVisible) {
+                    TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
+                }
+            }
+            timerRefreshButton.setOnClickListener {
+                if (serviceBound) playersService.stopTimer()
+            }
+        }
+        observeTimerStatus()
+    }
+
+    private fun observeTrackListState() {
+        viewModel.tracksListState.observe(this) {
+            tracksListAdapter.submitList(it)
+            if (serviceBound) playersService.initiatePlaylist(it)
+            Log.d("app_log", "list submitted $it")
+        }
+    }
+
+    private fun observeTimerStatus() {
         viewModel.timerStatus.observe(this) {
             with(binding) {
                 timerView.text = it.currentTime
-                timerRefreshButton.visibility = if (it.isActive) View.VISIBLE else View.GONE
-                if (it.isFinished) mainSwitch.isChecked = false
+                with(it.isActive) {
+                    timerRefreshButton.visibility = if (this) View.VISIBLE else View.GONE
+                    timerView.visibility = if (this) View.VISIBLE else View.GONE
+                }
+                if (it.isFinished) {
+                    binding.mainSwitch.isChecked = false
+                    viewModel.setMainSwitchState(false)
+                }
             }
             Log.d("app_timer", "timer text set: ${it.currentTime}")
         }
     }
 
-    private fun setupMainSwitchListener() {
-        with(binding.mainSwitch) {
-            setOnCheckedChangeListener { _, isChecked ->
-                tracksListAdapter.setItemsEnabled(isChecked)
-            }
-            // TODO: during to the isSaveEnabled false is loosing state on rotating
-            isSaveEnabled = false
-        }
-    }
-
-    private fun setupTimerClickListener() {
-        binding.timerView.setOnClickListener {
-            TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
-        }
-    }
-
-    private fun setupTimerRefreshButtonClickListener() {
-        binding.timerRefreshButton.setOnClickListener {
-            if (serviceBound) playersService.stopTimer()
-        }
+    private fun restoreMainSwitchState() {
+        binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
+        Log.d("app_log", "main switch restored")
     }
 
     private fun setupServiceConnection() {

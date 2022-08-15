@@ -14,14 +14,17 @@ class AppViewModel(
     application: Application,
     private val stateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
-    private val moshi = Moshi.Builder().build()
+    private val moshi by lazy { Moshi.Builder().build() }
     private val preferences = application.getSharedPreferences(
         PREFERENCES_NAME,
         AppCompatActivity.MODE_PRIVATE
     )
-    private val _tracksList = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
-    val tracksList: LiveData<List<Track>>
-        get() = _tracksList
+    private val _tracksListState = stateHandle.getLiveData<List<Track>>(STATE_HANDLE_STATES_KEY)
+    val tracksListState: LiveData<List<Track>>
+        get() = _tracksListState
+    private val _mainSwitchState = MutableLiveData(false)
+    val mainSwitchState: LiveData<Boolean>
+        get() = _mainSwitchState
     private val _timerStatus = MutableLiveData<PlayersService.TimerStatus>()
     val timerStatus: LiveData<PlayersService.TimerStatus>
         get() = _timerStatus
@@ -32,18 +35,18 @@ class AppViewModel(
     }
 
     private fun loadData() {
-        if (_tracksList.value == null) {
+        if (_tracksListState.value == null) {
             if (preferences.contains(PREFERENCES_STATES_KEY)) {
                 loadFromPrefs()
             } else {
                 loadFromDefaultStates()
             }
-        } else Log.d("app_log", "data set from states")
+        } else Log.d("app_log", "data set from states ${_tracksListState.value}")
     }
 
     fun setItemChecked(item: Track, isChecked: Boolean) {
         val newList = mutableListOf<Track>()
-        _tracksList.value?.forEach {
+        _tracksListState.value?.forEach {
             if (it.trackName == item.trackName) {
                 newList.add(item.copy(switchState = isChecked))
             } else {
@@ -55,13 +58,9 @@ class AppViewModel(
         Log.d("app_log", "view model: ${item.trackName} - item checked")
     }
 
-    fun setItemsEnabled(areEnabled: Boolean) {
-        val newList = mutableListOf<Track>()
-         _tracksList.value?.forEach {
-             newList.add(it.copy(switchEnabled = areEnabled))
-        }
-        stateHandle[STATE_HANDLE_STATES_KEY] = newList
-        Log.d("app_log", "view model: - items enabled $areEnabled")
+    fun setMainSwitchState(state: Boolean) {
+        _mainSwitchState.value = state
+        setItemsEnabled(state)
     }
 
     fun setTimerStatus(value: PlayersService.TimerStatus) {
@@ -70,13 +69,22 @@ class AppViewModel(
 
     fun saveData() {
         if (saveRequired) {
-            _tracksList.value?.let {
+            _tracksListState.value?.let {
                 val json = serialize(it)
                 preferences.edit().putString(PREFERENCES_STATES_KEY, json).apply()
             }
             saveRequired = false
             Log.d("app_log", "data saved")
         }
+    }
+
+    private fun setItemsEnabled(areEnabled: Boolean) {
+        val newList = mutableListOf<Track>()
+        _tracksListState.value?.forEach {
+            newList.add(it.copy(switchEnabled = areEnabled))
+        }
+        stateHandle[STATE_HANDLE_STATES_KEY] = newList
+        Log.d("app_log", "view model: - items enabled $areEnabled")
     }
 
     private fun loadFromPrefs() {

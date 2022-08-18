@@ -1,9 +1,6 @@
 package com.lavdevapp.chillax
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
@@ -182,6 +179,7 @@ class PlayersService : Service() {
             .setContentText(getString(R.string.foreground_service_notification_text))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
             .build()
     }
 

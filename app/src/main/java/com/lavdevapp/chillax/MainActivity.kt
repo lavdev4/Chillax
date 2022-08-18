@@ -1,23 +1,27 @@
 package com.lavdevapp.chillax
 
+import android.app.TimePickerDialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.View
+import android.widget.TimePicker
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.lifecycle.Observer
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private lateinit var binding: ActivityMainBinding
     private val viewModel by viewModels<AppViewModel>()
-    private lateinit var playersService: PlayersService
-    private lateinit var playersServiceIntent: Intent
-    private lateinit var serviceConnection: ServiceConnection
     private lateinit var tracksListAdapter: TracksListAdapter
+    private lateinit var playersService: PlayersService
+    private lateinit var serviceConnection: ServiceConnection
     private var serviceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,65 +30,113 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupAdapter()
-        observeTrackList()
-        setupMainSwitchListener()
+        setupMainSwitch()
+        restoreMainSwitchState()
+        setupTimer()
     }
 
     override fun onStart() {
         super.onStart()
         setupServiceConnection()
-        playersServiceIntent = Intent(this, PlayersService::class.java)
-        applicationContext.bindService(playersServiceIntent, serviceConnection, 0)
-        applicationContext.startService(playersServiceIntent)
+        Intent(this, PlayersService::class.java).also {
+            applicationContext.startService(it)
+            applicationContext.bindService(it, serviceConnection, 0)
+        }
     }
 
     override fun onPause() {
-        if (!isChangingConfigurations) {
-            viewModel.saveData()
-        }
+        if (!isChangingConfigurations) viewModel.saveData()
         super.onPause()
     }
 
     override fun onStop() {
-        if (serviceBound && !playersService.isActive) {
-            applicationContext.stopService(intent)
-        }
+        if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
         applicationContext.unbindService(serviceConnection)
         super.onStop()
     }
 
+    override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
+        if (serviceBound && (hour != 0 || minute != 0)) {
+            playersService.startTimer(hour, minute)
+        }
+    }
+
     private fun setupAdapter() {
-        tracksListAdapter = TracksListAdapter(
-            { track, isChecked -> viewModel.setItemChecked(track, isChecked) },
-            { areEnabled -> viewModel.setItemsEnabled(areEnabled) }
-        )
+        tracksListAdapter = TracksListAdapter { track, isChecked ->
+            viewModel.setItemChecked(track, isChecked)
+        }
         binding.playersRecyclerView.adapter = tracksListAdapter
+        observeTrackListState()
     }
 
-    private fun observeTrackList() {
-        viewModel.tracksList.observe(this) {
-            tracksListAdapter.submitList(it)
-            if (serviceBound) {
-                playersService.initiatePlaylist(it)
+    private fun setupMainSwitch() {
+        with(binding.mainSwitch) {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewModel.setMainSwitchState(isChecked)
+                Log.d("app_log", "main switch checked $isChecked")
             }
-            Log.d("app_log", "list submitted")
+            isSaveEnabled = false
         }
     }
 
-    private fun setupMainSwitchListener() {
-        binding.mainSwitch.setOnCheckedChangeListener { _, isChecked ->
-            tracksListAdapter.setItemsEnabled(isChecked)
+    private fun setupTimer() {
+        with(binding){
+            timerStartButton.setOnClickListener {
+                if (!timerView.isVisible) {
+                    TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
+                }
+            }
+            timerRefreshButton.setOnClickListener {
+                if (serviceBound) playersService.stopTimer()
+            }
         }
+        observeTimerStatus()
+    }
+
+    private fun observeTrackListState() {
+        viewModel.tracksListState.observe(this) {
+            tracksListAdapter.submitList(it)
+            if (serviceBound) playersService.initiatePlaylist(it)
+            Log.d("app_log", "list submitted $it")
+        }
+    }
+
+    private fun observeTimerStatus() {
+        viewModel.timerStatus.observe(this) {
+            with(binding) {
+                timerView.text = it.currentTime
+                with(it.isActive) {
+                    timerRefreshButton.visibility = if (this) View.VISIBLE else View.GONE
+                    timerView.visibility = if (this) View.VISIBLE else View.GONE
+                }
+                if (it.isFinished) {
+                    binding.mainSwitch.isChecked = false
+                    viewModel.setMainSwitchState(false)
+                }
+            }
+            Log.d("app_timer", "timer text set: ${it.currentTime}")
+        }
+    }
+
+    private fun restoreMainSwitchState() {
+        binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
+        Log.d("app_log", "main switch restored")
     }
 
     private fun setupServiceConnection() {
         serviceConnection = object : ServiceConnection {
-            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                this@MainActivity.playersService = (service as PlayersServiceBinder).service
+            private val observer = Observer<PlayersService.TimerStatus> {
+                viewModel.setTimerStatus(it)
+            }
+
+            override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                playersService = (binder as PlayersServiceBinder).service
+                playersService.timerStatus.observe(this@MainActivity, observer)
                 serviceBound = true
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
+                playersService.timerStatus.removeObserver(observer)
                 serviceBound = false
             }
         }

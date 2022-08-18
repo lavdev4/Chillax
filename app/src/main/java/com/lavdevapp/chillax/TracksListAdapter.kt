@@ -10,8 +10,7 @@ import com.lavdevapp.chillax.databinding.AdapterPlayersListBinding
 
 
 class TracksListAdapter(
-    private val onCheckedChangeCallback: (track: Track, isChecked: Boolean) -> Unit,
-    private val onEnabledChangeCallback: (areEnabled: Boolean) -> Unit
+    private val onCheckedChangeCallback: (track: Track, isChecked: Boolean) -> Unit
 ) : ListAdapter<Track, TracksListAdapter.TracksListViewHolder>(TracksListDiffUtil()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TracksListViewHolder {
@@ -31,10 +30,6 @@ class TracksListAdapter(
             playerSwitch.isEnabled = track.switchEnabled
         }
         Log.d("app_log", "onBindViewHolder: ${track.trackName}")
-    }
-
-    fun setItemsEnabled(areEnabled: Boolean) {
-        onEnabledChangeCallback(areEnabled)
     }
 
     inner class TracksListViewHolder(val binding: AdapterPlayersListBinding) :

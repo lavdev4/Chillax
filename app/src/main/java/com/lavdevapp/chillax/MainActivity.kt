@@ -1,9 +1,7 @@
 package com.lavdevapp.chillax
 
 import android.app.TimePickerDialog
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -22,6 +20,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private lateinit var tracksListAdapter: TracksListAdapter
     private lateinit var playersService: PlayersService
     private lateinit var serviceConnection: ServiceConnection
+    private lateinit var broadcastReceiver: BroadcastReceiver
     private var serviceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,6 +32,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         setupMainSwitch()
         restoreMainSwitchState()
         setupTimer()
+        setupBroadcastReceiver()
     }
 
     override fun onStart() {
@@ -53,6 +53,11 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         if (serviceBound && !playersService.isWorking) applicationContext.stopService(intent)
         applicationContext.unbindService(serviceConnection)
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(broadcastReceiver)
+        super.onDestroy()
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
@@ -93,6 +98,22 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         observeTimerStatus()
     }
 
+    private fun setupBroadcastReceiver() {
+        broadcastReceiver = object: BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> stopTimer()
+                    PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> setMainSwitchState(false)
+                }
+            }
+        }
+        val intentFilter = IntentFilter().apply {
+            addAction(PlayersService.NOTIFICATION_ACTION_STOP_TIMER)
+            addAction(PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS)
+        }
+        registerReceiver(broadcastReceiver, intentFilter)
+    }
+
     private fun observeTrackListState() {
         viewModel.tracksListState.observe(this) {
             tracksListAdapter.submitList(it)
@@ -110,8 +131,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                     timerView.visibility = if (this) View.VISIBLE else View.GONE
                 }
                 if (it.isFinished) {
-                    binding.mainSwitch.isChecked = false
-                    viewModel.setMainSwitchState(false)
+                    setMainSwitchState(false)
                 }
             }
             Log.d("app_timer", "timer text set: ${it.currentTime}")
@@ -121,6 +141,17 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private fun restoreMainSwitchState() {
         binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
         Log.d("app_log", "main switch restored")
+    }
+
+    // TODO:
+    private fun stopTimer() {
+        if (serviceBound) playersService.stopTimer(false)
+    }
+
+    private fun setMainSwitchState(state: Boolean) {
+        binding.mainSwitch.isChecked = state
+        // TODO:
+        viewModel.setMainSwitchState(state)
     }
 
     private fun setupServiceConnection() {

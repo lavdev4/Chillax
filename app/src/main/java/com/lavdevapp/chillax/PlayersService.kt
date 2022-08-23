@@ -1,6 +1,7 @@
 package com.lavdevapp.chillax
 
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
@@ -12,7 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModelProvider
+import com.lavdevapp.chillax.PlayersService.Companion.NOTIFICATION_ACTION_STOP_TIMER
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
@@ -154,7 +155,7 @@ class PlayersService : Service() {
 
     private fun startForeground() {
         createNotificationChannel()
-        startForeground(SERVICE_NOTIFICATION_ID, createNotification())
+        startForeground(NOTIFICATION_ID, createNotification())
         updateNotification()
     }
 
@@ -165,8 +166,8 @@ class PlayersService : Service() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
-                SERVICE_NOTIFICATION_CHANNEL_ID,
-                SERVICE_NOTIFICATION_CHANNEL_NAME,
+                NOTIFICATION_CHANNEL_ID,
+                NOTIFICATION_CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW
             )
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -175,17 +176,45 @@ class PlayersService : Service() {
     }
 
     private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, SERVICE_NOTIFICATION_CHANNEL_ID)
+        val openAppIntent = Intent(this, MainActivity::class.java)
+        val stopTimerIntent = Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER }
+        val stopPlaybackIntent = Intent().apply { action = NOTIFICATION_ACTION_STOP_PLAYERS }
+
+        val openAppPendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            openAppIntent,
+            0
+        )
+
+        val stopTimerPendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            stopTimerIntent,
+            0
+        )
+
+        val stopPlaybackPendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            stopPlaybackIntent,
+            0
+        )
+
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentText(getString(R.string.foreground_service_notification_text))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setContentIntent(openAppPendingIntent)
+            .addAction(0, "Discard timer", stopTimerPendingIntent)
+            .addAction(0, "Stop playback", stopPlaybackPendingIntent)
             .build()
     }
 
     private fun updateNotification() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(SERVICE_NOTIFICATION_ID, createNotification())
+        notificationManager.notify(NOTIFICATION_ID, createNotification())
     }
 
     inner class PlayersServiceBinder : Binder() {
@@ -200,10 +229,12 @@ class PlayersService : Service() {
     )
 
     companion object {
-        private const val SERVICE_NOTIFICATION_CHANNEL_ID =
+        private const val NOTIFICATION_CHANNEL_ID =
             "players_service_notification_channel_id"
-        private const val SERVICE_NOTIFICATION_CHANNEL_NAME =
+        private const val NOTIFICATION_CHANNEL_NAME =
             "players_service_notification_channel_name"
-        private const val SERVICE_NOTIFICATION_ID = 1
+        private const val NOTIFICATION_ID = 1
+        const val NOTIFICATION_ACTION_STOP_PLAYERS = "com.lavdevapp.chillax.STOP_PLAYERS"
+        const val NOTIFICATION_ACTION_STOP_TIMER = "com.lavdevapp.chillax.STOP_TIMER"
     }
 }

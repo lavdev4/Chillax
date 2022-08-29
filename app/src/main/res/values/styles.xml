@@ -2,5 +2,6 @@
 <resources>
     <style name="TimePickerStyle">
         <item name="android:timePickerMode">spinner</item>
+        <item name="android:descendantFocusability">blocksDescendants</item>
     </style>
 </resources>

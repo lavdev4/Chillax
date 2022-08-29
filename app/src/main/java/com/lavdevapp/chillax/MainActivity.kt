@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private lateinit var playersService: PlayersService
     private lateinit var serviceConnection: ServiceConnection
     private lateinit var broadcastReceiver: BroadcastReceiver
+    private var serviceTimerObserver: Observer<PlayersService.TimerStatus>? = null
     private var serviceBound = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,9 +31,9 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         setContentView(binding.root)
         setupAdapter()
         setupMainSwitch()
-        restoreMainSwitchState()
         setupTimer()
         setupBroadcastReceiver()
+        restoreMainSwitchState()
     }
 
     override fun onStart() {
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
         }
+        observeServiceTimer()
     }
 
     private fun setupAdapter() {
@@ -85,7 +87,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun setupTimer() {
-        with(binding){
+        with(binding) {
             timerStartButton.setOnClickListener {
                 if (!timerView.isVisible) {
                     TimePickerDialogFragment().show(supportFragmentManager, "timePicker")
@@ -99,11 +101,14 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun setupBroadcastReceiver() {
-        broadcastReceiver = object: BroadcastReceiver() {
+        broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> stopTimer()
-                    PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> setMainSwitchState(false)
+                    PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> {
+                        stopPlayers()
+                        binding.mainSwitch.isChecked = false
+                    }
                 }
             }
         }
@@ -131,10 +136,19 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                     timerView.visibility = if (this) View.VISIBLE else View.GONE
                 }
                 if (it.isFinished) {
-                    setMainSwitchState(false)
+                    binding.mainSwitch.isChecked = false
                 }
             }
             Log.d("app_timer", "timer text set: ${it.currentTime}")
+        }
+    }
+
+    private fun observeServiceTimer() {
+        if (serviceBound && serviceTimerObserver == null) {
+            serviceTimerObserver = Observer<PlayersService.TimerStatus> {
+                viewModel.setTimerStatus(it)
+                Log.d("app_log", "service timer status emit ${it.currentTime}")
+            }.also { playersService.timerStatus.observe(this, it) }
         }
     }
 
@@ -143,31 +157,22 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         Log.d("app_log", "main switch restored")
     }
 
-    // TODO:
+    private fun stopPlayers() {
+        if (serviceBound) playersService.stopPlayersIfActive()
+    }
+
     private fun stopTimer() {
         if (serviceBound) playersService.stopTimer(false)
     }
 
-    private fun setMainSwitchState(state: Boolean) {
-        binding.mainSwitch.isChecked = state
-        // TODO:
-        viewModel.setMainSwitchState(state)
-    }
-
     private fun setupServiceConnection() {
         serviceConnection = object : ServiceConnection {
-            private val observer = Observer<PlayersService.TimerStatus> {
-                viewModel.setTimerStatus(it)
-            }
-
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                 playersService = (binder as PlayersServiceBinder).service
-                playersService.timerStatus.observe(this@MainActivity, observer)
                 serviceBound = true
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
-                playersService.timerStatus.removeObserver(observer)
                 serviceBound = false
             }
         }

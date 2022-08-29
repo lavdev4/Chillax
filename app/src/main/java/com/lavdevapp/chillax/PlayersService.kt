@@ -5,10 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Binder
-import android.os.Build
-import android.os.CountDownTimer
-import android.os.IBinder
+import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
@@ -23,11 +20,17 @@ class PlayersService : Service() {
     val timerStatus: LiveData<TimerStatus>
         get() = _timerStatus
     private val playersActive: Boolean
-        get() { return activeMediaPlayers.isNotEmpty() }
+        get() {
+            return activeMediaPlayers.isNotEmpty()
+        }
     private val timerActive: Boolean
-        get() { return timer != null }
+        get() {
+            return timer != null
+        }
     val isWorking: Boolean
-        get() { return playersActive || timerActive }
+        get() {
+            return playersActive || timerActive
+        }
 
     override fun onCreate() {
         Log.d("app_log", "service started")
@@ -55,11 +58,22 @@ class PlayersService : Service() {
         Log.d("app_log", "playlist activated in service")
     }
 
+    fun stopPlayersIfActive() {
+        if (activeMediaPlayers.isNotEmpty()) activeMediaPlayers.forEach {
+            it.stop()
+            it.release()
+        }
+        activeMediaPlayers.clear()
+        if (!timerActive) stopForeground()
+        Log.d("app_log", "playlist cleared in service")
+    }
+
     fun startTimer(hour: Int, minute: Int) {
         startForeground()
         timer = object : CountDownTimer(timeToMillis(hour, minute), 1000) {
             override fun onTick(remainigMillis: Long) {
                 _timerStatus.value = TimerStatus(millisToTime(remainigMillis), timerActive)
+                updateNotification()
                 Log.d("app_timer", "on tick")
             }
 
@@ -84,8 +98,9 @@ class PlayersService : Service() {
         } else {
             timer?.cancel()
             timer = null
-            _timerStatus.value = TimerStatus(resources.getString(R.string.timer_default_text), false)
-            if (!playersActive) stopForeground()
+            _timerStatus.value =
+                TimerStatus(resources.getString(R.string.timer_default_text), false)
+            if (!playersActive) stopForeground() else updateNotification()
         }
     }
 
@@ -109,15 +124,6 @@ class PlayersService : Service() {
         return time
     }
 
-    private fun stopPlayersIfActive() {
-        if (activeMediaPlayers.isNotEmpty()) activeMediaPlayers.forEach {
-            it.stop()
-            it.release()
-        }
-        activeMediaPlayers.clear()
-        Log.d("app_log", "playlist cleared in service")
-    }
-
     private fun prepareAndStartPlayers(trackList: List<Track>) {
         trackList.forEach { track ->
             if (track.switchEnabled && track.switchState) {
@@ -138,15 +144,14 @@ class PlayersService : Service() {
                 it.prepareAsync()
                 Log.d("app_log", "player $it started")
             }
-        } else {
-            if (!timerActive) stopForeground()
-            Log.d("app_log", "foreground stopped")
+            updateNotification()
         }
     }
 
     private fun initMediaPlayer(trackUri: Uri): MediaPlayer {
         return MediaPlayer().apply {
             setDataSource(this@PlayersService, trackUri)
+            setWakeMode(this@PlayersService, PowerManager.PARTIAL_WAKE_LOCK)
             setOnPreparedListener { it.start() }
         }.also {
             it.isLooping = true
@@ -176,45 +181,54 @@ class PlayersService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val openAppIntent = Intent(this, MainActivity::class.java)
-        val stopTimerIntent = Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER }
-        val stopPlaybackIntent = Intent().apply { action = NOTIFICATION_ACTION_STOP_PLAYERS }
-
-        val openAppPendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            openAppIntent,
-            0
-        )
-
-        val stopTimerPendingIntent = PendingIntent.getBroadcast(
-            this,
-            0,
-            stopTimerIntent,
-            0
-        )
-
-        val stopPlaybackPendingIntent = PendingIntent.getBroadcast(
-            this,
-            0,
-            stopPlaybackIntent,
-            0
-        )
+        val pendingIntentImmutableFlag =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentText(getString(R.string.foreground_service_notification_text))
+            .setContentTitle(getString(R.string.foreground_service_notification_text))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
-            .setContentIntent(openAppPendingIntent)
-            .addAction(0, "Discard timer", stopTimerPendingIntent)
-            .addAction(0, "Stop playback", stopPlaybackPendingIntent)
+            .apply {
+
+                //set action to open app
+                PendingIntent.getActivity(
+                    this@PlayersService,
+                    0,
+                    Intent(this@PlayersService, MainActivity::class.java),
+                    pendingIntentImmutableFlag or PendingIntent.FLAG_CANCEL_CURRENT
+                ).also { setContentIntent(it) }
+
+                //set action to stop playlist
+                if (playersActive) {
+                    PendingIntent.getBroadcast(
+                        this@PlayersService,
+                        0,
+                        Intent().apply { action = NOTIFICATION_ACTION_STOP_PLAYERS },
+                        pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
+                    ).also { addAction(0, "Stop playback", it) }
+                }
+
+                //set action to stop timer
+                if (timerActive) {
+                    val stopTimerPendingIntent = PendingIntent.getBroadcast(
+                        this@PlayersService,
+                        0,
+                        Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER },
+                        pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
+                    ).also {
+                        addAction(0, "Discard timer", it)
+                        setContentText("Timer: ${_timerStatus.value?.currentTime}")
+                    }
+                }
+            }
             .build()
     }
 
     private fun updateNotification() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, createNotification())
+        val notification = createNotification()
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     inner class PlayersServiceBinder : Binder() {
@@ -225,7 +239,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false
+        val isFinished: Boolean = false,
     )
 
     companion object {

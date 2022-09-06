@@ -2,6 +2,7 @@ package com.lavdevapp.chillax
 
 import android.app.TimePickerDialog
 import android.content.*
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -59,6 +60,14 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     override fun onDestroy() {
         unregisterReceiver(broadcastReceiver)
         super.onDestroy()
+    }
+
+    override fun onBackPressed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            super.onBackPressed()
+        } else {
+            moveTaskToBack(false)
+        }
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {

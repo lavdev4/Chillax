@@ -47,6 +47,13 @@ class PlayersService : Service() {
         super.onDestroy()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        stopPlayersIfActive()
+        stopTimer()
+        Log.d("app_log", "service task removed")
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onBind(intent: Intent): IBinder {
         Log.d("app_log", "service bound")
         return PlayersServiceBinder()

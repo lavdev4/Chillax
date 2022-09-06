@@ -1,5 +1,6 @@
 package com.lavdevapp.chillax
 
+import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -10,7 +11,7 @@ import com.lavdevapp.chillax.databinding.AdapterPlayersListBinding
 
 
 class TracksListAdapter(
-    private val onCheckedChangeCallback: (track: Track, isChecked: Boolean) -> Unit
+    private val onCheckedChangeCallback: (track: Track, isChecked: Boolean) -> Unit,
 ) : ListAdapter<Track, TracksListAdapter.TracksListViewHolder>(TracksListDiffUtil()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TracksListViewHolder {
@@ -32,21 +33,36 @@ class TracksListAdapter(
         Log.d("app_log", "onBindViewHolder: ${track.trackName}")
     }
 
+    override fun onBindViewHolder(
+        holder: TracksListViewHolder,
+        position: Int,
+        payloads: MutableList<Any>,
+    ) {
+        if (payloads.isNotEmpty()) {
+            val bundle = (payloads[0] as Bundle)
+            with(holder.binding.playerSwitch) {
+                isChecked = bundle.getBoolean(PAYLOAD_SWITCH_STATE_KEY)
+                isEnabled = bundle.getBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY)
+            }
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     inner class TracksListViewHolder(val binding: AdapterPlayersListBinding) :
         RecyclerView.ViewHolder(binding.root) {
-            private val switchMaterial = binding.playerSwitch
+        private val switchMaterial = binding.playerSwitch
 
-            init {
-                switchMaterial.setOnClickListener {
-                    val actualItem = getItem(adapterPosition)
-                    onCheckedChangeCallback(actualItem, switchMaterial.isChecked)
-                }
-                Log.d("app_log", "view holder init")
+        init {
+            switchMaterial.setOnClickListener {
+                val actualItem = getItem(adapterPosition)
+                onCheckedChangeCallback(actualItem, switchMaterial.isChecked)
             }
+            Log.d("app_log", "view holder init")
         }
+    }
 
-    class TracksListDiffUtil : DiffUtil.ItemCallback<Track>() {
-
+    private class TracksListDiffUtil : DiffUtil.ItemCallback<Track>() {
         override fun areItemsTheSame(oldItem: Track, newItem: Track): Boolean {
             return oldItem.trackUri == newItem.trackUri
         }
@@ -54,10 +70,24 @@ class TracksListAdapter(
         override fun areContentsTheSame(oldItem: Track, newItem: Track): Boolean {
             Log.d("app_log", "areContentsTheSame: " +
                     "${oldItem.trackName} - " +
-                    "${(oldItem.switchState == newItem.switchState) &&
-                            (oldItem.switchEnabled == newItem.switchEnabled)}")
+                    "${
+                        (oldItem.switchState == newItem.switchState) &&
+                                (oldItem.switchEnabled == newItem.switchEnabled)
+                    }")
             return (oldItem.switchState == newItem.switchState) &&
                     (oldItem.switchEnabled == newItem.switchEnabled)
         }
+
+        override fun getChangePayload(oldItem: Track, newItem: Track): Any? {
+            return Bundle().apply {
+                putBoolean(PAYLOAD_SWITCH_STATE_KEY, newItem.switchState)
+                putBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY, newItem.switchEnabled)
+            }
+        }
+    }
+
+    companion object {
+        const val PAYLOAD_SWITCH_STATE_KEY = "checkbox_state"
+        const val PAYLOAD_SWITCH_ENABLED_STATE_KEY = "card_enabled_state"
     }
 }

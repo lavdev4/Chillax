@@ -4,4 +4,10 @@
         <item name="android:timePickerMode">spinner</item>
         <item name="android:descendantFocusability">blocksDescendants</item>
     </style>
+
+    <style name="SwitchStyle">
+        <item name="android:stateListAnimator">@animator/animator_switch_selector</item>
+        <item name="trackTint">@color/color_track_tint_selector</item>
+        <item name="thumbTint">@color/color_thumb_tint_selector</item>
+    </style>
 </resources>

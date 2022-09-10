@@ -1,5 +1,7 @@
 package com.lavdevapp.chillax
 
+import android.animation.AnimatorInflater
+import android.animation.StateListAnimator
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -7,6 +9,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.vectordrawable.graphics.drawable.AnimatorInflaterCompat
 import com.lavdevapp.chillax.databinding.AdapterPlayersListBinding
 
 
@@ -23,6 +26,7 @@ class TracksListAdapter(
         return TracksListViewHolder(binding)
     }
 
+    // TODO: syntax correction
     override fun onBindViewHolder(holder: TracksListViewHolder, position: Int) {
         val track = getItem(position)
         with(holder.binding) {
@@ -33,6 +37,7 @@ class TracksListAdapter(
         Log.d("app_log", "onBindViewHolder: ${track.trackName}")
     }
 
+    // TODO: syntax correction
     override fun onBindViewHolder(
         holder: TracksListViewHolder,
         position: Int,
@@ -49,14 +54,16 @@ class TracksListAdapter(
         }
     }
 
+    // TODO: syntax correction
     inner class TracksListViewHolder(val binding: AdapterPlayersListBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        private val switchMaterial = binding.playerSwitch
 
         init {
-            switchMaterial.setOnClickListener {
-                val actualItem = getItem(adapterPosition)
-                onCheckedChangeCallback(actualItem, switchMaterial.isChecked)
+            with(binding.playerSwitch) {
+                setOnClickListener {
+                    val actualItem = getItem(adapterPosition)
+                    onCheckedChangeCallback(actualItem, isChecked)
+                }
             }
             Log.d("app_log", "view holder init")
         }

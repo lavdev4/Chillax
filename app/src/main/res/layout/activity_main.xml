@@ -9,8 +9,9 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="60dp"
         android:fitsSystemWindows="true"
+        style="@style/ToolbarStyle"
         app:layout_constraintBottom_toTopOf="@id/players_recycler_view"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -48,12 +49,12 @@
 
             <ToggleButton
                 android:id="@+id/main_switch"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_gravity="center"
+                android:background="@drawable/background_main_switch_selector"
                 android:textOn=""
-                android:textOff=""
-                android:background="@drawable/ic_main_switch_selector"
-                android:layout_gravity="center"/>
+                android:textOff=""/>
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -61,6 +62,7 @@
         android:id="@+id/players_recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="40dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -74,6 +76,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="30dp"
         android:layout_marginBottom="30dp"
+        style="@style/fabStyle"
         android:src="@drawable/ic_start_timer_button"
         app:maxImageSize="30dp"
         app:layout_constraintRight_toRightOf="parent"

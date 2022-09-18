@@ -1,20 +1,17 @@
 package com.lavdevapp.chillax
 
-import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import java.net.URI
 
 @JsonClass(generateAdapter = true)
 data class Track(
     val trackName: String,
     val trackUri: String,
     val switchState: Boolean = false,
-    @Json(ignore = true) val switchEnabled: Boolean = false
+    @Json(ignore = true) val switchEnabled: Boolean = false,
 ) : Parcelable {
 
     @Json(ignore = true)
@@ -26,13 +23,11 @@ data class Track(
         parcel.readByte() != 0.toByte()
     )
 
-    override fun writeToParcel(parcel: Parcel?, flag: Int) {
-        parcel?.let {
-            with(it) {
-                writeString(trackName)
-                writeString(trackUri)
-                writeByte(if (switchState) 1 else 0)
-            }
+    override fun writeToParcel(parcel: Parcel, flag: Int) {
+        with(parcel) {
+            writeString(trackName)
+            writeString(trackUri)
+            writeByte(if (switchState) 1 else 0)
         }
     }
 

@@ -1,7 +1,6 @@
 package com.lavdevapp.chillax
 
 import android.app.*
-import android.content.BroadcastReceiver
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
@@ -10,7 +9,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.lavdevapp.chillax.PlayersService.Companion.NOTIFICATION_ACTION_STOP_TIMER
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
@@ -172,7 +170,11 @@ class PlayersService : Service() {
     }
 
     private fun stopForeground() {
-        stopForeground(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            stopForeground(true)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -193,11 +195,11 @@ class PlayersService : Service() {
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.foreground_service_notification_text))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            //setting actions
             .apply {
-
                 //set action to open app
                 PendingIntent.getActivity(
                     this@PlayersService,
@@ -218,7 +220,7 @@ class PlayersService : Service() {
 
                 //set action to stop timer
                 if (timerActive) {
-                    val stopTimerPendingIntent = PendingIntent.getBroadcast(
+                    PendingIntent.getBroadcast(
                         this@PlayersService,
                         0,
                         Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER },

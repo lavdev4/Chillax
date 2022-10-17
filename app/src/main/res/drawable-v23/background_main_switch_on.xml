@@ -60,8 +60,5 @@
     </item>
 
     <item android:drawable="@drawable/ic_main_switch_on"
-        android:left="18dp"
-        android:right="18dp"
-        android:top="8dp"
-        android:bottom="8dp"/>
+        android:gravity="center"/>
 </layer-list>

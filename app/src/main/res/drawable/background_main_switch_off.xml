@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
     <!-- item required for elevation shadow to work -->
     <item>
         <shape>
-            <size android:width="40dp" android:height="40dp"/>
             <corners android:radius="10dp"/>
             <solid android:color="@color/white"/>
         </shape>
@@ -45,6 +43,9 @@
         </shape>
     </item>
 
-    <item android:drawable="@drawable/ic_main_switch_icon_off"
-        android:gravity="center"/>
+    <item android:drawable="@drawable/ic_main_switch_off"
+        android:left="18dp"
+        android:right="18dp"
+        android:top="8dp"
+        android:bottom="8dp"/>
 </layer-list>

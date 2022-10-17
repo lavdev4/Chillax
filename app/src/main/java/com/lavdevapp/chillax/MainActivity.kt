@@ -75,6 +75,8 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             playersService.startTimer(hour, minute)
         }
         observeServiceTimer()
+        // TODO: button disappears when timer is set to 00:00
+        binding.timerStartButton.hide()
     }
 
     private fun setupAdapter() {
@@ -103,7 +105,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                 }
             }
             timerRefreshButton.setOnClickListener {
-                if (serviceBound) playersService.stopTimer()
+                if (serviceBound) {
+                    playersService.stopTimer()
+                    binding.timerStartButton.show()
+                }
             }
         }
         observeTimerStatus()
@@ -146,6 +151,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                 }
                 if (it.isFinished) {
                     binding.mainSwitch.isChecked = false
+                    binding.timerStartButton.show()
                 }
             }
             Log.d("app_timer", "timer text set: ${it.currentTime}")

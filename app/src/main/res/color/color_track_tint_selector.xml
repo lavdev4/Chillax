@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Override required for enabled/disabled animation of switch to work -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:alpha="0.6" android:color="?attr/colorAccent"/>
+    <item android:alpha="0.2" android:color="@color/black"/>
+</selector>

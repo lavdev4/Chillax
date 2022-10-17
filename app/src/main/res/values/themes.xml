@@ -1,21 +1,37 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.Chillax" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.Chillax" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primaryVariant</item>
+        <item name="colorPrimaryDark">@color/primaryDark</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondaryVariant</item>
         <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        <!-- Accent -->
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <!-- Surface -->
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/black</item>
+        <!-- Text -->
+        <item name="fontFamily">@font/nunito_sans</item>
+        <!-- Background -->
+        <item name="android:windowBackground">@drawable/background_window</item>
+        <!-- Other colors -->
+
+        <!-- Bars -->
+        <item name="android:navigationBarColor">#00000000</item>
+        <item name="android:statusBarColor">#33000000</item>
+        <!-- Theming -->
         <item name="android:timePickerDialogTheme">@style/CustomTimePickerDialogTheme</item>
     </style>
 
     <style name="CustomTimePickerDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog">
         <item name="android:timePickerStyle">@style/TimePickerStyle</item>
+        <item name="android:buttonBarButtonStyle">@style/TimePickerDialogButtonStyle</item>
+        <item name="android:windowBackground">@color/primary</item>
     </style>
 </resources>

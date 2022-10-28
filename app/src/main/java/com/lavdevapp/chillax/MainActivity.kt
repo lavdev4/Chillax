@@ -73,10 +73,9 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
+            binding.timerStartButton.hide()
         }
         observeServiceTimer()
-        // TODO: button disappears when timer is set to 00:00
-        binding.timerStartButton.hide()
     }
 
     private fun setupAdapter() {

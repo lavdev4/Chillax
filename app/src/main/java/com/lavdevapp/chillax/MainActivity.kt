@@ -8,6 +8,9 @@ import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.widget.TimePicker
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -30,6 +33,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         Log.d("app_log", "--------------------------------")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupOnBackPressedCallback()
         setupAdapter()
         setupMainSwitch()
         setupTimer()
@@ -62,20 +66,23 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         super.onDestroy()
     }
 
-    override fun onBackPressed() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            super.onBackPressed()
-        } else {
-            moveTaskToBack(false)
-        }
-    }
-
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
             binding.timerStartButton.hide()
         }
         observeServiceTimer()
+    }
+
+    private fun setupOnBackPressedCallback() {
+        onBackPressedDispatcher.addCallback(this) {
+            if (serviceBound && playersService.isWorking) {
+                moveTaskToBack(false)
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
     }
 
     private fun setupAdapter() {

@@ -1,15 +1,11 @@
 package com.lavdevapp.chillax
 
-import android.animation.AnimatorInflater
-import android.animation.StateListAnimator
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.vectordrawable.graphics.drawable.AnimatorInflaterCompat
 import com.lavdevapp.chillax.databinding.AdapterPlayersListBinding
 
 
@@ -26,7 +22,6 @@ class TracksListAdapter(
         return TracksListViewHolder(binding)
     }
 
-    // TODO: syntax correction
     override fun onBindViewHolder(holder: TracksListViewHolder, position: Int) {
         val track = getItem(position)
         with(holder.binding) {
@@ -34,10 +29,8 @@ class TracksListAdapter(
             playerSwitch.isChecked = track.switchState
             playerSwitch.isEnabled = track.switchEnabled
         }
-        Log.d("app_log", "onBindViewHolder: ${track.trackName}")
     }
 
-    // TODO: syntax correction
     override fun onBindViewHolder(
         holder: TracksListViewHolder,
         position: Int,
@@ -45,19 +38,17 @@ class TracksListAdapter(
     ) {
         if (payloads.isNotEmpty()) {
             val bundle = (payloads[0] as Bundle)
-            with(holder.binding.playerSwitch) {
-                isChecked = bundle.getBoolean(PAYLOAD_SWITCH_STATE_KEY)
-                isEnabled = bundle.getBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY)
+            with(holder.binding) {
+                playerSwitch.isChecked = bundle.getBoolean(PAYLOAD_SWITCH_STATE_KEY)
+                playerSwitch.isEnabled = bundle.getBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY)
             }
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
     }
 
-    // TODO: syntax correction
     inner class TracksListViewHolder(val binding: AdapterPlayersListBinding) :
         RecyclerView.ViewHolder(binding.root) {
-
         init {
             with(binding.playerSwitch) {
                 setOnClickListener {
@@ -65,7 +56,6 @@ class TracksListAdapter(
                     onCheckedChangeCallback(actualItem, isChecked)
                 }
             }
-            Log.d("app_log", "view holder init")
         }
     }
 
@@ -75,17 +65,11 @@ class TracksListAdapter(
         }
 
         override fun areContentsTheSame(oldItem: Track, newItem: Track): Boolean {
-            Log.d("app_log", "areContentsTheSame: " +
-                    "${oldItem.trackName} - " +
-                    "${
-                        (oldItem.switchState == newItem.switchState) &&
-                                (oldItem.switchEnabled == newItem.switchEnabled)
-                    }")
             return (oldItem.switchState == newItem.switchState) &&
                     (oldItem.switchEnabled == newItem.switchEnabled)
         }
 
-        override fun getChangePayload(oldItem: Track, newItem: Track): Any? {
+        override fun getChangePayload(oldItem: Track, newItem: Track): Any {
             return Bundle().apply {
                 putBoolean(PAYLOAD_SWITCH_STATE_KEY, newItem.switchState)
                 putBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY, newItem.switchEnabled)

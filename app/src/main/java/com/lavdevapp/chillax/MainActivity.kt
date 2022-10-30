@@ -2,14 +2,10 @@ package com.lavdevapp.chillax
 
 import android.app.TimePickerDialog
 import android.content.*
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.View
 import android.widget.TimePicker
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -30,7 +26,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("app_log", "--------------------------------")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupOnBackPressedCallback()
@@ -97,7 +92,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         with(binding.mainSwitch) {
             setOnCheckedChangeListener { _, isChecked ->
                 viewModel.setMainSwitchState(isChecked)
-                Log.d("app_log", "main switch checked $isChecked")
             }
             isSaveEnabled = false
         }
@@ -143,7 +137,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         viewModel.tracksListState.observe(this) {
             tracksListAdapter.submitList(it)
             if (serviceBound) playersService.initiatePlaylist(it)
-            Log.d("app_log", "list submitted $it")
         }
     }
 
@@ -160,7 +153,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                     binding.timerStartButton.show()
                 }
             }
-            Log.d("app_timer", "timer text set: ${it.currentTime}")
         }
     }
 
@@ -168,14 +160,12 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         if (serviceBound && serviceTimerObserver == null) {
             serviceTimerObserver = Observer<PlayersService.TimerStatus> {
                 viewModel.setTimerStatus(it)
-                Log.d("app_log", "service timer status emit ${it.currentTime}")
             }.also { playersService.timerStatus.observe(this, it) }
         }
     }
 
     private fun restoreMainSwitchState() {
         binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
-        Log.d("app_log", "main switch restored")
     }
 
     private fun stopPlayers() {

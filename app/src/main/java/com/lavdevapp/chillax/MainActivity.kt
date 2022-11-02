@@ -118,10 +118,14 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> stopTimer()
+                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> {
+                        stopTimer()
+                        binding.timerStartButton.show() // TODO: set viewmodel?
+                    }
                     PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> {
                         stopPlayers()
-                        binding.mainSwitch.isChecked = false
+                        binding.mainSwitch.isChecked = false // TODO: set viewmodel?
+//                        viewModel.setMainSwitchState(false) // TODO: main switch not observed
                     }
                 }
             }

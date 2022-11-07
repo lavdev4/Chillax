@@ -5,7 +5,6 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -30,37 +29,23 @@ class PlayersService : Service() {
             return playersActive || timerActive
         }
 
-    override fun onCreate() {
-        Log.d("app_log", "service started")
-        super.onCreate()
-    }
-
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Log.d("app_log", "service start command")
         return START_NOT_STICKY
-    }
-
-    override fun onDestroy() {
-        Log.d("app_log", "service destroyed")
-        super.onDestroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         stopPlayersIfActive()
         stopTimer()
-        Log.d("app_log", "service task removed")
         super.onTaskRemoved(rootIntent)
     }
 
     override fun onBind(intent: Intent): IBinder {
-        Log.d("app_log", "service bound")
         return PlayersServiceBinder()
     }
 
     fun initiatePlaylist(trackList: List<Track>) {
         stopPlayersIfActive()
         prepareAndStartPlayers(trackList)
-        Log.d("app_log", "playlist activated in service")
     }
 
     fun stopPlayersIfActive() {
@@ -70,7 +55,6 @@ class PlayersService : Service() {
         }
         activeMediaPlayers.clear()
         if (!timerActive) stopForeground()
-        Log.d("app_log", "playlist cleared in service")
     }
 
     fun startTimer(hour: Int, minute: Int) {
@@ -79,15 +63,12 @@ class PlayersService : Service() {
             override fun onTick(remainigMillis: Long) {
                 _timerStatus.value = TimerStatus(millisToTime(remainigMillis), timerActive)
                 updateNotification()
-                Log.d("app_timer", "on tick")
             }
 
             override fun onFinish() {
                 stopTimer(true)
-                Log.d("app_timer", "on finish")
             }
         }.start()
-        Log.d("app_timer", "timer started")
     }
 
     fun stopTimer(isFinished: Boolean = false) {
@@ -111,9 +92,7 @@ class PlayersService : Service() {
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
 //        val millis = hour * 3600000L + minute * 60000L
-        val millis = hour * 60000L + minute * 1000L
-        Log.d("app_timer", "millis: $millis")
-        return millis
+        return hour * 60000L + minute * 1000L
     }
 
     private fun millisToTime(millis: Long): String {
@@ -124,9 +103,7 @@ class PlayersService : Service() {
         val hour = totalMinutes / 60
         val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
 
-        val time = resources.getString(R.string.timer_text_format, hour, minute)
-        Log.d("app_timer", "time: $time")
-        return time
+        return resources.getString(R.string.timer_text_format, hour, minute)
     }
 
     private fun prepareAndStartPlayers(trackList: List<Track>) {
@@ -134,7 +111,6 @@ class PlayersService : Service() {
             if (track.switchEnabled && track.switchState) {
                 val mediaPlayer = initMediaPlayer(track.parsedUri)
                 activeMediaPlayers.add(mediaPlayer)
-                Log.d("app_log", "player init with track name: ${track.trackName}")
             }
         }
         startPlayers()
@@ -143,11 +119,9 @@ class PlayersService : Service() {
     private fun startPlayers() {
         if (activeMediaPlayers.isNotEmpty()) {
             startForeground()
-            Log.d("app_log", "foreground started")
             activeMediaPlayers.forEach {
-                //starts players on prepared callback
+                //start players from callback when prepared
                 it.prepareAsync()
-                Log.d("app_log", "player $it started")
             }
             updateNotification()
         }
@@ -173,6 +147,8 @@ class PlayersService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
+            //Required for api level < 24
+            @Suppress("DEPRECATION")
             stopForeground(true)
         }
     }
@@ -198,7 +174,7 @@ class PlayersService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
-            //setting actions
+            //setting notification actions
             .apply {
                 //set action to open app
                 PendingIntent.getActivity(
@@ -215,7 +191,7 @@ class PlayersService : Service() {
                         0,
                         Intent().apply { action = NOTIFICATION_ACTION_STOP_PLAYERS },
                         pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
-                    ).also { addAction(0, "Stop playback", it) }
+                    ).also { addAction(0, getString(R.string.notification_action_stop_playback), it) }
                 }
 
                 //set action to stop timer
@@ -226,7 +202,7 @@ class PlayersService : Service() {
                         Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER },
                         pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
                     ).also {
-                        addAction(0, "Discard timer", it)
+                        addAction(0, getString(R.string.notification_action_stop_timer), it)
                         setContentText("Timer: ${_timerStatus.value?.currentTime}")
                     }
                 }
@@ -248,7 +224,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false,
+        val isFinished: Boolean = false
     )
 
     companion object {

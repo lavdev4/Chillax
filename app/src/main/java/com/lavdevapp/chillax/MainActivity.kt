@@ -2,12 +2,11 @@ package com.lavdevapp.chillax
 
 import android.app.TimePickerDialog
 import android.content.*
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.View
 import android.widget.TimePicker
+import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -27,14 +26,13 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("app_log", "--------------------------------")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupOnBackPressedCallback()
         setupAdapter()
         setupMainSwitch()
         setupTimer()
         setupBroadcastReceiver()
-        restoreMainSwitchState()
     }
 
     override fun onStart() {
@@ -62,21 +60,22 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         super.onDestroy()
     }
 
-    override fun onBackPressed() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            super.onBackPressed()
-        } else {
-            moveTaskToBack(false)
-        }
-    }
-
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
         }
         observeServiceTimer()
-        // TODO: button disappears when timer is set to 00:00
-        binding.timerStartButton.hide()
+    }
+
+    private fun setupOnBackPressedCallback() {
+        onBackPressedDispatcher.addCallback(this) {
+            if (serviceBound && playersService.isWorking) {
+                moveTaskToBack(false)
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
     }
 
     private fun setupAdapter() {
@@ -89,12 +88,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
 
     private fun setupMainSwitch() {
         with(binding.mainSwitch) {
-            setOnCheckedChangeListener { _, isChecked ->
-                viewModel.setMainSwitchState(isChecked)
-                Log.d("app_log", "main switch checked $isChecked")
-            }
+            setOnClickListener { viewModel.setMainSwitchState(isChecked) }
             isSaveEnabled = false
         }
+        observeMainSwitchState()
     }
 
     private fun setupTimer() {
@@ -107,7 +104,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             timerRefreshButton.setOnClickListener {
                 if (serviceBound) {
                     playersService.stopTimer()
-                    binding.timerStartButton.show()
                 }
             }
         }
@@ -118,10 +114,12 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> stopTimer()
+                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> {
+                        stopTimer()
+                    }
                     PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> {
                         stopPlayers()
-                        binding.mainSwitch.isChecked = false
+                        viewModel.setMainSwitchState(false)
                     }
                 }
             }
@@ -137,24 +135,24 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         viewModel.tracksListState.observe(this) {
             tracksListAdapter.submitList(it)
             if (serviceBound) playersService.initiatePlaylist(it)
-            Log.d("app_log", "list submitted $it")
         }
     }
 
+    private fun observeMainSwitchState() {
+        viewModel.mainSwitchState.observe(this) { binding.mainSwitch.isChecked = it }
+    }
+
     private fun observeTimerStatus() {
-        viewModel.timerStatus.observe(this) {
+        viewModel.timerStatus.observe(this) { timerStatus ->
             with(binding) {
-                timerView.text = it.currentTime
-                with(it.isActive) {
-                    timerRefreshButton.visibility = if (this) View.VISIBLE else View.GONE
-                    timerView.visibility = if (this) View.VISIBLE else View.GONE
-                }
-                if (it.isFinished) {
-                    binding.mainSwitch.isChecked = false
-                    binding.timerStartButton.show()
+                with(timerStatus) {
+                    timerView.text = currentTime
+                    timerRefreshButton.visibility = if (isActive) View.VISIBLE else View.GONE
+                    timerView.visibility = if (isActive) View.VISIBLE else View.GONE
+                    if (isActive) timerStartButton.hide() else timerStartButton.show()
+                    if (isFinished) viewModel.setMainSwitchState(false)
                 }
             }
-            Log.d("app_timer", "timer text set: ${it.currentTime}")
         }
     }
 
@@ -162,14 +160,8 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         if (serviceBound && serviceTimerObserver == null) {
             serviceTimerObserver = Observer<PlayersService.TimerStatus> {
                 viewModel.setTimerStatus(it)
-                Log.d("app_log", "service timer status emit ${it.currentTime}")
             }.also { playersService.timerStatus.observe(this, it) }
         }
-    }
-
-    private fun restoreMainSwitchState() {
-        binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
-        Log.d("app_log", "main switch restored")
     }
 
     private fun stopPlayers() {

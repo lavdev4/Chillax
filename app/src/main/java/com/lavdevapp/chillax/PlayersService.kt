@@ -191,7 +191,7 @@ class PlayersService : Service() {
                         0,
                         Intent().apply { action = NOTIFICATION_ACTION_STOP_PLAYERS },
                         pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
-                    ).also { addAction(0, "Stop playback", it) }
+                    ).also { addAction(0, getString(R.string.notification_action_stop_playback), it) }
                 }
 
                 //set action to stop timer
@@ -202,7 +202,7 @@ class PlayersService : Service() {
                         Intent().apply { action = NOTIFICATION_ACTION_STOP_TIMER },
                         pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
                     ).also {
-                        addAction(0, "Discard timer", it)
+                        addAction(0, getString(R.string.notification_action_stop_timer), it)
                         setContentText("Timer: ${_timerStatus.value?.currentTime}")
                     }
                 }
@@ -224,7 +224,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false,
+        val isFinished: Boolean = false
     )
 
     companion object {

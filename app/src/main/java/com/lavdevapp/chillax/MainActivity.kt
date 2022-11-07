@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         setupMainSwitch()
         setupTimer()
         setupBroadcastReceiver()
-        restoreMainSwitchState()
     }
 
     override fun onStart() {
@@ -64,7 +63,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
         if (serviceBound && (hour != 0 || minute != 0)) {
             playersService.startTimer(hour, minute)
-            binding.timerStartButton.hide()
         }
         observeServiceTimer()
     }
@@ -90,11 +88,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
 
     private fun setupMainSwitch() {
         with(binding.mainSwitch) {
-            setOnCheckedChangeListener { _, isChecked ->
-                viewModel.setMainSwitchState(isChecked)
-            }
+            setOnClickListener { viewModel.setMainSwitchState(isChecked) }
             isSaveEnabled = false
         }
+        observeMainSwitchState()
     }
 
     private fun setupTimer() {
@@ -107,7 +104,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             timerRefreshButton.setOnClickListener {
                 if (serviceBound) {
                     playersService.stopTimer()
-                    binding.timerStartButton.show()
                 }
             }
         }
@@ -120,12 +116,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                 when (intent?.action) {
                     PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> {
                         stopTimer()
-                        binding.timerStartButton.show() // TODO: set viewmodel?
                     }
                     PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> {
                         stopPlayers()
-                        binding.mainSwitch.isChecked = false // TODO: set viewmodel?
-//                        viewModel.setMainSwitchState(false) // TODO: main switch not observed
+                        viewModel.setMainSwitchState(false)
                     }
                 }
             }
@@ -144,17 +138,19 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         }
     }
 
+    private fun observeMainSwitchState() {
+        viewModel.mainSwitchState.observe(this) { binding.mainSwitch.isChecked = it }
+    }
+
     private fun observeTimerStatus() {
-        viewModel.timerStatus.observe(this) {
+        viewModel.timerStatus.observe(this) { timerStatus ->
             with(binding) {
-                timerView.text = it.currentTime
-                with(it.isActive) {
-                    timerRefreshButton.visibility = if (this) View.VISIBLE else View.GONE
-                    timerView.visibility = if (this) View.VISIBLE else View.GONE
-                }
-                if (it.isFinished) {
-                    binding.mainSwitch.isChecked = false
-                    binding.timerStartButton.show()
+                with(timerStatus) {
+                    timerView.text = currentTime
+                    timerRefreshButton.visibility = if (isActive) View.VISIBLE else View.GONE
+                    timerView.visibility = if (isActive) View.VISIBLE else View.GONE
+                    if (isActive) timerStartButton.hide() else timerStartButton.show()
+                    if (isFinished) viewModel.setMainSwitchState(false)
                 }
             }
         }
@@ -166,10 +162,6 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
                 viewModel.setTimerStatus(it)
             }.also { playersService.timerStatus.observe(this, it) }
         }
-    }
-
-    private fun restoreMainSwitchState() {
-        binding.mainSwitch.isChecked = viewModel.mainSwitchState.value ?: false
     }
 
     private fun stopPlayers() {

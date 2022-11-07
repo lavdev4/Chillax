@@ -224,7 +224,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false,
+        val isFinished: Boolean = false
     )
 
     companion object {

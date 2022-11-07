@@ -24,7 +24,6 @@ class AppViewModel(
     private val _mainSwitchState = MutableLiveData(false)
     val mainSwitchState: LiveData<Boolean>
         get() = _mainSwitchState
-    // TODO: try to add timer button state
     private val _timerStatus = MutableLiveData<PlayersService.TimerStatus>()
     val timerStatus: LiveData<PlayersService.TimerStatus>
         get() = _timerStatus

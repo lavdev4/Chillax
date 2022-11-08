@@ -10,6 +10,7 @@ import com.squareup.moshi.JsonClass
 data class Track(
     val trackName: String,
     val trackUri: String,
+    val volume: Float,
     val switchState: Boolean = false,
     @Json(ignore = true) val switchEnabled: Boolean = false,
 ) : Parcelable {
@@ -20,6 +21,7 @@ data class Track(
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,
+        parcel.readFloat(),
         parcel.readByte() != 0.toByte()
     )
 
@@ -27,6 +29,7 @@ data class Track(
         with(parcel) {
             writeString(trackName)
             writeString(trackUri)
+            writeFloat(volume)
             writeByte(if (switchState) 1 else 0)
         }
     }

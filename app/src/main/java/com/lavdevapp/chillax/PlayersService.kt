@@ -91,25 +91,20 @@ class PlayersService : Service() {
     }
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
-//        val millis = hour * 3600000L + minute * 60000L
-        return hour * 60000L + minute * 1000L
+        return hour * 3600000L + minute * 60000L
     }
 
     private fun millisToTime(millis: Long): String {
-//        val totalMinutes = millis / 60000
-//        val hour = totalMinutes / 60
-//        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
-        val totalMinutes = millis / 1000
+        val totalMinutes = millis / 60000
         val hour = totalMinutes / 60
-        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
-
+        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt()
         return resources.getString(R.string.timer_text_format, hour, minute)
     }
 
     private fun prepareAndStartPlayers(trackList: List<Track>) {
-        trackList.forEach { track ->
-            if (track.switchEnabled && track.switchState) {
-                val mediaPlayer = initMediaPlayer(track.parsedUri)
+        trackList.forEach {
+            if (it.switchEnabled && it.switchState) {
+                val mediaPlayer = initMediaPlayer(it.parsedUri, it.volume)
                 activeMediaPlayers.add(mediaPlayer)
             }
         }
@@ -127,9 +122,10 @@ class PlayersService : Service() {
         }
     }
 
-    private fun initMediaPlayer(trackUri: Uri): MediaPlayer {
+    private fun initMediaPlayer(trackUri: Uri, volume: Float): MediaPlayer {
         return MediaPlayer().apply {
             setDataSource(this@PlayersService, trackUri)
+            setVolume(volume, volume)
             setWakeMode(this@PlayersService, PowerManager.PARTIAL_WAKE_LOCK)
             setOnPreparedListener { it.start() }
         }.also {

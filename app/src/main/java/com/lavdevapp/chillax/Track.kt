@@ -11,8 +11,9 @@ data class Track(
     val trackName: String,
     val trackUri: String,
     val volume: Float,
-    val switchState: Boolean = false,
-    @Json(ignore = true) val switchEnabled: Boolean = false,
+    val isPlaying: Boolean = false,
+    val isFavourite: Boolean = false,
+    @Json(ignore = true) val isEnabled: Boolean = false
 ) : Parcelable {
 
     @Json(ignore = true)
@@ -22,6 +23,7 @@ data class Track(
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readFloat(),
+        parcel.readByte() != 0.toByte(),
         parcel.readByte() != 0.toByte()
     )
 
@@ -30,7 +32,8 @@ data class Track(
             writeString(trackName)
             writeString(trackUri)
             writeFloat(volume)
-            writeByte(if (switchState) 1 else 0)
+            writeByte(if (isPlaying) 1 else 0)
+            writeByte(if (isPlaying) 1 else 0)
         }
     }
 

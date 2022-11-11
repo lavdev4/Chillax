@@ -11,14 +11,14 @@ import androidx.lifecycle.MutableLiveData
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
-    private val activeMediaPlayers = mutableListOf<MediaPlayer>()
+    private val activePlayers = mutableMapOf<String, MediaPlayer>()
     private var timer: CountDownTimer? = null
     private val _timerStatus = MutableLiveData<TimerStatus>()
     val timerStatus: LiveData<TimerStatus>
         get() = _timerStatus
     private val playersActive: Boolean
         get() {
-            return activeMediaPlayers.isNotEmpty()
+            return activePlayers.isNotEmpty()
         }
     private val timerActive: Boolean
         get() {
@@ -34,7 +34,7 @@ class PlayersService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        stopPlayersIfActive()
+        stopPlayers()
         stopTimer()
         super.onTaskRemoved(rootIntent)
     }
@@ -44,16 +44,29 @@ class PlayersService : Service() {
     }
 
     fun initiatePlaylist(trackList: List<Track>) {
-        stopPlayersIfActive()
+        stopDisabledPlayers(trackList)
         prepareAndStartPlayers(trackList)
     }
 
-    fun stopPlayersIfActive() {
-        if (activeMediaPlayers.isNotEmpty()) activeMediaPlayers.forEach {
-            it.stop()
-            it.release()
+    private fun stopDisabledPlayers(trackList: List<Track>) {
+        if (playersActive) trackList.forEach { track ->
+            if (!(track.isPlaying && track.isEnabled) && activePlayers.containsKey(track.trackName)) {
+                activePlayers[track.trackName]?.let { player ->
+                    player.stop()
+                    player.release()
+                }
+                activePlayers.remove(track.trackName)
+            }
         }
-        activeMediaPlayers.clear()
+        if (!playersActive) stopPlayers()
+    }
+
+    fun stopPlayers() {
+        if (playersActive) activePlayers.forEach {
+            it.value.stop()
+            it.value.release()
+        }
+        activePlayers.clear()
         if (!timerActive) stopForeground()
     }
 
@@ -74,7 +87,7 @@ class PlayersService : Service() {
     fun stopTimer(isFinished: Boolean = false) {
         if (isFinished) {
             timer = null
-            stopPlayersIfActive()
+            stopPlayers()
             _timerStatus.value = TimerStatus(
                 resources.getString(R.string.timer_default_text),
                 isActive = false,
@@ -102,27 +115,29 @@ class PlayersService : Service() {
     }
 
     private fun prepareAndStartPlayers(trackList: List<Track>) {
-        trackList.forEach {
-            if (it.switchEnabled && it.switchState) {
-                val mediaPlayer = initMediaPlayer(it.parsedUri, it.volume)
-                activeMediaPlayers.add(mediaPlayer)
+        trackList.forEach { track ->
+            if (track.isEnabled && track.isPlaying && !activePlayers.containsKey(track.trackName)) {
+                val player = initPlayer(track.parsedUri, track.volume)
+                activePlayers[track.trackName] = player
             }
         }
         startPlayers()
     }
 
     private fun startPlayers() {
-        if (activeMediaPlayers.isNotEmpty()) {
+        if (playersActive) {
             startForeground()
-            activeMediaPlayers.forEach {
+            activePlayers.forEach {
                 //start players from callback when prepared
-                it.prepareAsync()
+                if (!it.value.isPlaying) {
+                    it.value.prepareAsync()
+                }
             }
             updateNotification()
         }
     }
 
-    private fun initMediaPlayer(trackUri: Uri, volume: Float): MediaPlayer {
+    private fun initPlayer(trackUri: Uri, volume: Float): MediaPlayer {
         return MediaPlayer().apply {
             setDataSource(this@PlayersService, trackUri)
             setVolume(volume, volume)
@@ -220,7 +235,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false
+        val isFinished: Boolean = false,
     )
 
     companion object {

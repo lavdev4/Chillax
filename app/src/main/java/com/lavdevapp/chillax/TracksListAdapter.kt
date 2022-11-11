@@ -10,7 +10,11 @@ import com.lavdevapp.chillax.databinding.AdapterPlayersListBinding
 
 
 class TracksListAdapter(
-    private val onCheckedChangeCallback: (track: Track, isChecked: Boolean) -> Unit,
+    private val onItemChangedCallback: (
+        track: Track,
+        switchChecked: Boolean,
+        favouritesChecked: Boolean
+    ) -> Unit
 ) : ListAdapter<Track, TracksListAdapter.TracksListViewHolder>(TracksListDiffUtil()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TracksListViewHolder {
@@ -26,8 +30,9 @@ class TracksListAdapter(
         val track = getItem(position)
         with(holder.binding) {
             playerName.text = track.trackName
-            playerSwitch.isChecked = track.switchState
-            playerSwitch.isEnabled = track.switchEnabled
+            playerSwitch.isChecked = track.isPlaying
+            playerSwitch.isEnabled = track.isEnabled
+            playerFavourites.isChecked = track.isFavourite
         }
     }
 
@@ -53,7 +58,13 @@ class TracksListAdapter(
             with(binding.playerSwitch) {
                 setOnClickListener {
                     val actualItem = getItem(adapterPosition)
-                    onCheckedChangeCallback(actualItem, isChecked)
+                    onItemChangedCallback(actualItem, isChecked, actualItem.isFavourite)
+                }
+            }
+            with(binding.playerFavourites) {
+                setOnClickListener {
+                    val actualItem = getItem(adapterPosition)
+                    onItemChangedCallback(actualItem, actualItem.isPlaying, isChecked)
                 }
             }
         }
@@ -65,14 +76,14 @@ class TracksListAdapter(
         }
 
         override fun areContentsTheSame(oldItem: Track, newItem: Track): Boolean {
-            return (oldItem.switchState == newItem.switchState) &&
-                    (oldItem.switchEnabled == newItem.switchEnabled)
+            return (oldItem.isPlaying == newItem.isPlaying) &&
+                    (oldItem.isEnabled == newItem.isEnabled)
         }
 
         override fun getChangePayload(oldItem: Track, newItem: Track): Any {
             return Bundle().apply {
-                putBoolean(PAYLOAD_SWITCH_STATE_KEY, newItem.switchState)
-                putBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY, newItem.switchEnabled)
+                putBoolean(PAYLOAD_SWITCH_STATE_KEY, newItem.isPlaying)
+                putBoolean(PAYLOAD_SWITCH_ENABLED_STATE_KEY, newItem.isEnabled)
             }
         }
     }

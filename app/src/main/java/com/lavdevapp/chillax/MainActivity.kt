@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
@@ -79,8 +80,14 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun setupAdapter() {
-        tracksListAdapter = TracksListAdapter { track, isChecked ->
-            viewModel.setItemChecked(track, isChecked)
+        tracksListAdapter = TracksListAdapter { track, isPlaying, isFavourite ->
+            viewModel.updateItem(track, isPlaying, isFavourite)
+        }.also {
+            it.registerAdapterDataObserver(object : AdapterDataObserver() {
+                override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+                    binding.playersRecyclerView.scrollToPosition(fromPosition)
+                }
+            })
         }
         binding.playersRecyclerView.adapter = tracksListAdapter
         observeTrackListState()
@@ -132,9 +139,11 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun observeTrackListState() {
-        viewModel.tracksListState.observe(this) {
-            tracksListAdapter.submitList(it)
-            if (serviceBound) playersService.initiatePlaylist(it)
+        viewModel.tracksListState.observe(this) { tracks ->
+            val sortedList =
+                tracks.sortedWith(compareBy<Track> { !it.isFavourite }.thenBy { it.trackName })
+            tracksListAdapter.submitList(sortedList)
+            if (serviceBound) playersService.initiatePlaylist(tracks)
         }
     }
 
@@ -165,7 +174,7 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     }
 
     private fun stopPlayers() {
-        if (serviceBound) playersService.stopPlayersIfActive()
+        if (serviceBound) playersService.stopPlayers()
     }
 
     private fun stopTimer() {

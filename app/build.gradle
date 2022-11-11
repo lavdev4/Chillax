@@ -36,6 +36,7 @@ android {
     ksp {
         arg("moshi.generateProguardRules", "false")
     }
+    namespace 'com.lavdevapp.chillax'
 }
 
 dependencies {

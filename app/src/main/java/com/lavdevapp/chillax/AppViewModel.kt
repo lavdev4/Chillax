@@ -43,11 +43,11 @@ class AppViewModel(
         }
     }
 
-    fun setItemChecked(item: Track, isChecked: Boolean) {
+    fun updateItem(item: Track, isPlaying: Boolean, isFavourite: Boolean) {
         val newList = mutableListOf<Track>()
         _tracksListState.value?.forEach {
             if (it.trackName == item.trackName) {
-                newList.add(item.copy(switchState = isChecked))
+                newList.add(item.copy(isPlaying = isPlaying, isFavourite = isFavourite))
             } else {
                 newList.add(it.copy())
             }
@@ -78,7 +78,7 @@ class AppViewModel(
     private fun setItemsEnabled(areEnabled: Boolean) {
         val newList = mutableListOf<Track>()
         _tracksListState.value?.forEach {
-            newList.add(it.copy(switchEnabled = areEnabled))
+            newList.add(it.copy(isEnabled = areEnabled))
         }
         stateHandle[STATE_HANDLE_STATES_KEY] = newList
     }

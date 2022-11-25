@@ -2,7 +2,6 @@ package com.lavdevapp.chillax
 
 import android.app.*
 import android.content.Intent
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
 import androidx.core.app.NotificationCompat
@@ -11,14 +10,14 @@ import androidx.lifecycle.MutableLiveData
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
-    private val activeMediaPlayers = mutableListOf<MediaPlayer>()
+    private val activePlayers = mutableMapOf<String, LoopPlayer>()
     private var timer: CountDownTimer? = null
     private val _timerStatus = MutableLiveData<TimerStatus>()
     val timerStatus: LiveData<TimerStatus>
         get() = _timerStatus
     private val playersActive: Boolean
         get() {
-            return activeMediaPlayers.isNotEmpty()
+            return activePlayers.isNotEmpty()
         }
     private val timerActive: Boolean
         get() {
@@ -34,7 +33,7 @@ class PlayersService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        stopPlayersIfActive()
+        stopPlayers()
         stopTimer()
         super.onTaskRemoved(rootIntent)
     }
@@ -44,16 +43,29 @@ class PlayersService : Service() {
     }
 
     fun initiatePlaylist(trackList: List<Track>) {
-        stopPlayersIfActive()
+        stopDisabledPlayers(trackList)
         prepareAndStartPlayers(trackList)
     }
 
-    fun stopPlayersIfActive() {
-        if (activeMediaPlayers.isNotEmpty()) activeMediaPlayers.forEach {
-            it.stop()
-            it.release()
+    private fun stopDisabledPlayers(trackList: List<Track>) {
+        if (playersActive) trackList.forEach { track ->
+            if (!(track.isPlaying && track.isEnabled) && activePlayers.containsKey(track.trackName)) {
+                activePlayers[track.trackName]?.let { player ->
+                    player.stop()
+                    player.release()
+                }
+                activePlayers.remove(track.trackName)
+            }
         }
-        activeMediaPlayers.clear()
+        if (!playersActive) stopPlayers()
+    }
+
+    fun stopPlayers() {
+        if (playersActive) activePlayers.forEach {
+            it.value.stop()
+            it.value.release()
+        }
+        activePlayers.clear()
         if (!timerActive) stopForeground()
     }
 
@@ -74,7 +86,7 @@ class PlayersService : Service() {
     fun stopTimer(isFinished: Boolean = false) {
         if (isFinished) {
             timer = null
-            stopPlayersIfActive()
+            stopPlayers()
             _timerStatus.value = TimerStatus(
                 resources.getString(R.string.timer_default_text),
                 isActive = false,
@@ -91,49 +103,39 @@ class PlayersService : Service() {
     }
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
-//        val millis = hour * 3600000L + minute * 60000L
-        return hour * 60000L + minute * 1000L
+        return hour * 3600000L + minute * 60000L
     }
 
     private fun millisToTime(millis: Long): String {
-//        val totalMinutes = millis / 60000
-//        val hour = totalMinutes / 60
-//        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
-        val totalMinutes = millis / 1000
+        val totalMinutes = millis / 60000
         val hour = totalMinutes / 60
-        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt() + 1
-
+        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt()
         return resources.getString(R.string.timer_text_format, hour, minute)
     }
 
     private fun prepareAndStartPlayers(trackList: List<Track>) {
         trackList.forEach { track ->
-            if (track.switchEnabled && track.switchState) {
-                val mediaPlayer = initMediaPlayer(track.parsedUri)
-                activeMediaPlayers.add(mediaPlayer)
+            if (track.isEnabled && track.isPlaying && !activePlayers.containsKey(track.trackName)) {
+                val player = initPlayer(track.parsedUri, track.volume)
+                activePlayers[track.trackName] = player
             }
         }
         startPlayers()
     }
 
-    private fun startPlayers() {
-        if (activeMediaPlayers.isNotEmpty()) {
-            startForeground()
-            activeMediaPlayers.forEach {
-                //start players from callback when prepared
-                it.prepareAsync()
-            }
-            updateNotification()
-        }
+    private fun initPlayer(trackUri: Uri, volume: Float): LoopPlayer {
+        return LoopPlayer(this, trackUri, volume)
     }
 
-    private fun initMediaPlayer(trackUri: Uri): MediaPlayer {
-        return MediaPlayer().apply {
-            setDataSource(this@PlayersService, trackUri)
-            setWakeMode(this@PlayersService, PowerManager.PARTIAL_WAKE_LOCK)
-            setOnPreparedListener { it.start() }
-        }.also {
-            it.isLooping = true
+    private fun startPlayers() {
+        if (playersActive) {
+            startForeground()
+            activePlayers.forEach {
+                if (!it.value.isPlaying()) {
+                    it.value.start()
+                }
+            }
+            updateNotification()
         }
     }
 
@@ -224,7 +226,7 @@ class PlayersService : Service() {
     data class TimerStatus(
         val currentTime: String,
         val isActive: Boolean,
-        val isFinished: Boolean = false
+        val isFinished: Boolean = false,
     )
 
     companion object {

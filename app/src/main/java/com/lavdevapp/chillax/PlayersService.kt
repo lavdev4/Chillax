@@ -2,7 +2,6 @@ package com.lavdevapp.chillax
 
 import android.app.*
 import android.content.Intent
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
 import androidx.core.app.NotificationCompat
@@ -11,7 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import kotlin.math.roundToInt
 
 class PlayersService : Service() {
-    private val activePlayers = mutableMapOf<String, MediaPlayer>()
+    private val activePlayers = mutableMapOf<String, LoopPlayer>()
     private var timer: CountDownTimer? = null
     private val _timerStatus = MutableLiveData<TimerStatus>()
     val timerStatus: LiveData<TimerStatus>
@@ -124,27 +123,19 @@ class PlayersService : Service() {
         startPlayers()
     }
 
+    private fun initPlayer(trackUri: Uri, volume: Float): LoopPlayer {
+        return LoopPlayer(this, trackUri, volume)
+    }
+
     private fun startPlayers() {
         if (playersActive) {
             startForeground()
             activePlayers.forEach {
-                //start players from callback when prepared
-                if (!it.value.isPlaying) {
-                    it.value.prepareAsync()
+                if (!it.value.isPlaying()) {
+                    it.value.start()
                 }
             }
             updateNotification()
-        }
-    }
-
-    private fun initPlayer(trackUri: Uri, volume: Float): MediaPlayer {
-        return MediaPlayer().apply {
-            setDataSource(this@PlayersService, trackUri)
-            setVolume(volume, volume)
-            setWakeMode(this@PlayersService, PowerManager.PARTIAL_WAKE_LOCK)
-            setOnPreparedListener { it.start() }
-        }.also {
-            it.isLooping = true
         }
     }
 

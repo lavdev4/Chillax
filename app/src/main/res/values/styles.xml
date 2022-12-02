@@ -16,7 +16,7 @@
         <item name="thumbTint">@color/color_thumb_tint_selector</item>
     </style>
     
-    <style name="fabStyle" parent="Widget.MaterialComponents.FloatingActionButton">
+    <style name="FabStyle" parent="Widget.MaterialComponents.FloatingActionButton">
         <item name="fabSize">auto</item>
         <item name="backgroundTint">@color/accent</item>
     </style>
@@ -29,6 +29,8 @@
 
     <style name="TimePickerDialogButtonStyle" parent="Widget.MaterialComponents.Button.TextButton">
         <item name="android:textColor">@color/accent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
     </style>
 
     <style name="TitleStyle" parent="Widget.MaterialComponents.TextView">

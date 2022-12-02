@@ -32,6 +32,10 @@
     <style name="CustomTimePickerDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog">
         <item name="android:timePickerStyle">@style/TimePickerStyle</item>
         <item name="android:buttonBarButtonStyle">@style/TimePickerDialogButtonStyle</item>
-        <item name="android:windowBackground">@color/primary</item>
+        <item name="android:windowBackground">@color/primaryDark</item>
+        <item name="colorControlNormal">@color/transparentBlack</item>
+        <item name="android:textColorPrimary">@color/semiTransparentBlack</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
     </style>
 </resources>

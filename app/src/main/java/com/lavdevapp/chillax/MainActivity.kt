@@ -121,10 +121,10 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    PlayersService.NOTIFICATION_ACTION_STOP_TIMER -> {
+                    PlayersService.BROADCAST_ACTION_STOP_TIMER -> {
                         stopTimer()
                     }
-                    PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS -> {
+                    PlayersService.BROADCAST_ACTION_STOP_PLAYERS -> {
                         stopPlayers()
                         viewModel.setMainSwitchState(false)
                     }
@@ -132,8 +132,8 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             }
         }
         val intentFilter = IntentFilter().apply {
-            addAction(PlayersService.NOTIFICATION_ACTION_STOP_TIMER)
-            addAction(PlayersService.NOTIFICATION_ACTION_STOP_PLAYERS)
+            addAction(PlayersService.BROADCAST_ACTION_STOP_TIMER)
+            addAction(PlayersService.BROADCAST_ACTION_STOP_PLAYERS)
         }
         registerReceiver(broadcastReceiver, intentFilter)
     }

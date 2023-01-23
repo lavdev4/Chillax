@@ -12,6 +12,7 @@ class LoopPlayer(
 ) {
     private var currentPlayer: MediaPlayer = MediaPlayer()
     private lateinit var nextPlayer: MediaPlayer
+    private var isPaused = false
 
     init {
         with(currentPlayer) {
@@ -44,18 +45,34 @@ class LoopPlayer(
     }
 
     fun start() {
-        //start players from callback when prepared
-        currentPlayer.prepareAsync()
+        if (isPaused) {
+            currentPlayer.start()
+            isPaused = false
+        } else {
+            //start players from callback when prepared
+            currentPlayer.prepareAsync()
+        }
     }
 
     fun stop() {
         currentPlayer.stop()
+        release()
     }
 
-    fun release() {
+    fun pause() {
+        currentPlayer.pause()
+        isPaused = true
+    }
+
+    private fun release() {
         currentPlayer.release()
         nextPlayer.release()
     }
 
-    fun isPlaying() = currentPlayer.isPlaying
+//    fun isPlaying() = currentPlayer.isPlaying
+
+    companion object {
+        fun create(context: Context, dataSource: Uri, volume: Float) =
+            LoopPlayer(context, dataSource, volume).apply { start() }
+    }
 }

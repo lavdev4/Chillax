@@ -1,8 +1,8 @@
 plugins {
     id 'com.android.application'
     id("com.google.devtools.ksp").version("1.7.10-1.0.6")
-    id 'com.google.gms.google-services'
-    id 'com.google.firebase.crashlytics'
+//    id 'com.google.gms.google-services'
+//    id 'com.google.firebase.crashlytics'
 }
 apply plugin: 'kotlin-android'
 
@@ -41,9 +41,9 @@ android {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:31.1.1')
-    implementation 'com.google.firebase:firebase-analytics-ktx:21.2.0'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.2'
+//    implementation platform('com.google.firebase:firebase-bom:31.1.1')
+//    implementation 'com.google.firebase:firebase-analytics-ktx:21.2.0'
+//    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.2'
     implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'com.google.android.material:material:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

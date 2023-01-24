@@ -10,7 +10,7 @@ import android.os.*
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import kotlin.math.roundToInt
+import java.util.concurrent.TimeUnit
 
 class PlayersService : Service(), AudioManager.OnAudioFocusChangeListener {
     private var currentTrackList: List<Track>? = null
@@ -150,13 +150,14 @@ class PlayersService : Service(), AudioManager.OnAudioFocusChangeListener {
         timer = object : CountDownTimer(timeToMillis(hour, minute), 1000) {
             override fun onTick(remainigMillis: Long) {
                 _timerStatus.value = TimerStatus(millisToTime(remainigMillis), timerActive)
-                updateNotification()
+                if (remainigMillis / 1000 % 60 == 0.toLong()) updateNotification()
             }
 
             override fun onFinish() {
                 stopTimer(true)
             }
         }.start()
+        Handler(Looper.getMainLooper()).postDelayed({ updateNotification() }, 1000)
     }
 
     fun stopTimer(isFinished: Boolean = false) {
@@ -179,14 +180,17 @@ class PlayersService : Service(), AudioManager.OnAudioFocusChangeListener {
     }
 
     private fun timeToMillis(hour: Int, minute: Int): Long {
-        return hour * 3600000L + minute * 60000L
+        return TimeUnit.HOURS.toMillis(hour.toLong()) + TimeUnit.MINUTES.toMillis(minute.toLong())
     }
 
     private fun millisToTime(millis: Long): String {
-        val totalMinutes = millis / 60000
-        val hour = totalMinutes / 60
-        val minute = ((totalMinutes / 60.0 - hour) * 60.0).roundToInt()
-        return resources.getString(R.string.timer_text_format, hour, minute)
+        val hours = TimeUnit.MILLISECONDS.toHours(millis)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(hours)
+        val seconds =
+            TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.MINUTES.toSeconds(
+                minutes
+            )
+        return resources.getString(R.string.timer_text_format, hours, minutes, seconds)
     }
 
     private fun startForeground() {
@@ -263,7 +267,17 @@ class PlayersService : Service(), AudioManager.OnAudioFocusChangeListener {
                         pendingIntentImmutableFlag or PendingIntent.FLAG_ONE_SHOT
                     ).also {
                         addAction(0, getString(R.string.notification_action_stop_timer), it)
-                        setContentText("Timer: ${_timerStatus.value?.currentTime}")
+                        val time = _timerStatus.value?.currentTime?.let { timeString ->
+                            timeString.split(":")
+                                .run {
+                                    resources.getString(
+                                        R.string.timer_text_format_short,
+                                        get(0).toInt(),
+                                        get(1).toInt() + 1
+                                    )
+                                }
+                        }
+                        setContentText("Timer: $time")
                     }
                 }
 
@@ -328,6 +342,7 @@ class PlayersService : Service(), AudioManager.OnAudioFocusChangeListener {
     }
 
     data class TimerStatus(
+        //Expected to have hh:mm:ss format
         val currentTime: String,
         val isActive: Boolean,
         val isFinished: Boolean = false,

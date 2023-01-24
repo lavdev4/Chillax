@@ -11,7 +11,7 @@ class LoopPlayer(
     private val volume: Float
 ) {
     private var currentPlayer: MediaPlayer = MediaPlayer()
-    private lateinit var nextPlayer: MediaPlayer
+    private var nextPlayer: MediaPlayer? = null
     private var isPaused = false
 
     init {
@@ -31,17 +31,17 @@ class LoopPlayer(
             setDataSource(context, dataSource)
             setVolume(volume, volume)
             setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
-        }
-        nextPlayer.setOnPreparedListener {
-            currentPlayer.setNextMediaPlayer(nextPlayer)
-            currentPlayer.setOnCompletionListener {
-                nextPlayer.start()
-                it.release()
-                currentPlayer = nextPlayer
-                prepareNextPlayer()
+            setOnPreparedListener {
+                currentPlayer.setNextMediaPlayer(nextPlayer)
+                currentPlayer.setOnCompletionListener {
+                    nextPlayer!!.start()
+                    it.release()
+                    currentPlayer = nextPlayer as MediaPlayer
+                    prepareNextPlayer()
+                }
             }
         }
-        nextPlayer.prepareAsync()
+        nextPlayer?.prepareAsync()
     }
 
     fun start() {
@@ -66,7 +66,7 @@ class LoopPlayer(
 
     private fun release() {
         currentPlayer.release()
-        nextPlayer.release()
+        nextPlayer?.release()
     }
 
 //    fun isPlaying() = currentPlayer.isPlaying

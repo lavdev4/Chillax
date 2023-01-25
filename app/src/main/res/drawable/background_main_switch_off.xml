@@ -3,6 +3,7 @@
     <!-- item required for elevation shadow to work -->
     <item>
         <shape>
+            <size android:width="40dp" android:height="40dp"/>
             <corners android:radius="10dp"/>
             <solid android:color="@color/white"/>
         </shape>
@@ -12,7 +13,7 @@
         <shape>
             <corners android:radius="9dp"/>
             <gradient
-                android:startColor="?attr/colorPrimary"
+                android:startColor="@color/primary"
                 android:centerColor="@color/black"
                 android:type="radial"
                 android:gradientRadius="650dp"
@@ -28,7 +29,7 @@
         android:bottom="3.2dp">
         <shape>
             <corners android:radius="7.5dp"/>
-            <solid android:color="?attr/colorPrimary"/>
+            <solid android:color="@color/primary"/>
         </shape>
     </item>
 
@@ -44,8 +45,8 @@
     </item>
 
     <item android:drawable="@drawable/ic_main_switch_off"
-        android:left="18dp"
-        android:right="18dp"
-        android:top="8dp"
-        android:bottom="8dp"/>
+        android:left="23dp"
+        android:right="23dp"
+        android:top="9dp"
+        android:bottom="9dp"/>
 </layer-list>

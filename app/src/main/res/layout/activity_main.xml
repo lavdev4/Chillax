@@ -8,9 +8,12 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
         app:contentInsetStart="10dp"
+        app:contentInsetEnd="20dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:fitsSystemWindows="true"
         style="@style/ToolbarStyle"
         app:layout_constraintBottom_toTopOf="@id/players_recycler_view"
@@ -20,14 +23,13 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="20dp">
+            android:layout_height="match_parent">
 
             <TextView
                 android:id="@+id/title"
                 android:layout_width="wrap_content"
                 android:layout_height="35sp"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:paddingTop="1dp"
                 android:paddingStart="3dp"
                 android:paddingEnd="5dp"
@@ -42,8 +44,9 @@
             <TextView
                 android:id="@+id/subtitle"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="18sp"
                 android:text="@string/toolbar_subtitle"
+                android:layout_marginBottom="2dp"
                 android:paddingStart="3dp"
                 android:paddingEnd="5dp"
                 style="@style/SubtitleStyle"
@@ -53,17 +56,14 @@
 
             <ImageButton
                 android:id="@+id/timer_refresh_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="3dp"
                 android:src="@drawable/ic_restore_timer"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:visibility="gone"
                 tools:ignore="ContentDescription"
-                app:layout_constraintHorizontal_chainStyle="packed"
-                app:layout_constraintHorizontal_bias="0.86"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintLeft_toRightOf="@id/title"
                 app:layout_constraintRight_toLeftOf="@id/timer_view"
                 app:layout_constraintBottom_toBottomOf="parent"
                 tools:visibility="visible"/>
@@ -72,10 +72,10 @@
                 android:id="@+id/timer_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
                 android:visibility="gone"
                 style="@style/TimerTextStyle"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintLeft_toRightOf="@id/timer_refresh_button"
                 app:layout_constraintRight_toLeftOf="@id/main_switch"
                 app:layout_constraintBottom_toBottomOf="parent"
                 tools:visibility="visible"
@@ -83,10 +83,8 @@
 
             <ToggleButton
                 android:id="@+id/main_switch"
-                android:layout_width="66dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="6dp"
+                android:layout_width="75dp"
+                android:layout_height="48dp"
                 android:textOn=""
                 android:textOff=""
                 android:background="@drawable/background_main_switch_selector"

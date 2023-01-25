@@ -13,7 +13,7 @@
         <shape>
             <corners android:radius="9dp"/>
             <gradient
-                android:startColor="?attr/colorPrimary"
+                android:startColor="@color/primary"
                 android:centerColor="@color/black"
                 android:type="radial"
                 android:gradientRadius="650dp"
@@ -29,7 +29,7 @@
         android:bottom="3.2dp">
         <shape>
             <corners android:radius="7.5dp"/>
-            <solid android:color="?attr/colorPrimary"/>
+            <solid android:color="@color/primary"/>
         </shape>
     </item>
 

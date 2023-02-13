@@ -4,7 +4,9 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.PowerManager
+import kotlin.random.Random
 
+//Required for repeated playback without gaps
 class LoopPlayer(
     private val context: Context,
     private val dataSource: Uri,
@@ -20,9 +22,12 @@ class LoopPlayer(
             setVolume(volume, volume)
             setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
             setOnPreparedListener {
+                val pos = Random.nextInt(1000, it.duration - 1000)
+                it.seekTo(pos)
                 it.start()
                 prepareNextPlayer()
             }
+
         }
     }
 

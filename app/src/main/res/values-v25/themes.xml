@@ -29,10 +29,15 @@
         <item name="android:timePickerDialogTheme">@style/CustomTimePickerDialogTheme</item>
     </style>
 
-    <style name="CustomTimePickerDialogTheme" parent="android:Theme.Material.Dialog">
-        <item name="android:timePickerStyle">@style/TimePickerClockStyle</item>
+    <style name="CustomTimePickerDialogTheme" parent="android:ThemeOverlay.Material.Dialog">
+        <item name="android:timePickerStyle">@style/TimePickerSpinnerStyle</item>
+        <item name="colorControlNormal">@color/transparent</item>
         <item name="android:windowBackground">@drawable/background_dialog</item>
         <item name="android:buttonBarPositiveButtonStyle">@style/DialogPositiveButtonStyle</item>
         <item name="android:buttonBarNegativeButtonStyle">@style/DialogNegativeButtonStyle</item>
+        <item name="android:windowTitleStyle">@style/DialogTitleStyle</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:fontFamily">?attr/fontFamily</item>
+        <item name="android:textColorPrimary">@color/semiTransparentBlack</item>
     </style>
 </resources>

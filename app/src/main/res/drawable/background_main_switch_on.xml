@@ -13,9 +13,9 @@
             <corners android:radius="9dp"/>
             <gradient
                 android:startColor="@color/primary"
-                android:centerColor="#D6B500"
+                android:centerColor="@color/accentDark"
                 android:type="radial"
-                android:gradientRadius="250dp"
+                android:gradientRadius="220dp"
                 android:centerX="0.5"
                 android:centerY="0.5"/>
         </shape>
@@ -36,6 +36,11 @@
         <shape>
             <corners android:radius="7.5dp"/>
             <solid android:color="@color/primary"/>
+            <gradient
+                android:startColor="@color/primary"
+                android:endColor="@color/accentDark"
+                android:type="radial"
+                android:gradientRadius="200dp"/>
         </shape>
     </item>
 
@@ -50,18 +55,18 @@
         </shape>
     </item>
 
-    <item>
-        <shape>
-            <gradient
-                android:startColor="#33D6B500"
-                android:type="radial"
-                android:gradientRadius="30dp"/>
-        </shape>
-    </item>
+<!--    <item>-->
+<!--        <shape>-->
+<!--            <gradient-->
+<!--                android:startColor="#33D6B500"-->
+<!--                android:type="radial"-->
+<!--                android:gradientRadius="16dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
 
-    <item android:drawable="@drawable/ic_main_switch_on"
-        android:left="23dp"
-        android:right="23dp"
-        android:top="9dp"
-        android:bottom="9dp"/>
+<!--    <item android:drawable="@drawable/ic_main_switch_on"-->
+<!--        android:left="23dp"-->
+<!--        android:right="23dp"-->
+<!--        android:top="9dp"-->
+<!--        android:bottom="9dp"/>-->
 </layer-list>

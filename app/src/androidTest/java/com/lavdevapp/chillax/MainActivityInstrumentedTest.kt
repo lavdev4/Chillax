@@ -35,7 +35,7 @@ import kotlin.reflect.KClass
 @LargeTest
 class MainActivityInstrumentedTest {
     private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-    private val delayMinutes = 3
+    private val delayMinutes = 40
 
     @get:Rule
     val activityTestRule: ActivityScenarioRule<MainActivity> =

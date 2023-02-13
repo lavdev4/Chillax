@@ -4,7 +4,7 @@
     <color name="gray">#424242</color>
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
-    <color name="semiTransparentBlack">#99000000</color>
+    <color name="semiTransparentBlack">#B3000000</color>
     <color name="transparentBlack">#4D000000</color>
     
     <color name="primary">#7D8F7D</color>
@@ -12,10 +12,12 @@
     <color name="primaryDark">#516251</color>
     <color name="secondary">#C0D8C0</color>
     <color name="secondaryVariant">#f3fff3</color>
+    <color name="secondaryDark">#7A927A</color>
     
     <color name="cardFirst">#B19B72</color>
     <color name="cardSecond">#837F77</color>
     
     <color name="accent">#D6B500</color>
+    <color name="accentTransparent">#8CD6B500</color>
     <color name="accentDark">#C5AB80</color>
 </resources>

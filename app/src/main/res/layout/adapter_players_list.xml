@@ -38,8 +38,8 @@
         
         <ToggleButton
             android:id="@+id/player_favourites"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:layout_marginEnd="16dp"
             android:textOn=""
             android:textOff=""

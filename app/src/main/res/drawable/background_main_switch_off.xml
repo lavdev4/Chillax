@@ -40,13 +40,13 @@
         android:bottom="3.2dp">
         <shape>
             <corners android:radius="7dp"/>
-            <stroke android:width="1dp" android:color="#66000000"/>
+            <stroke android:width="1dp" android:color="@color/transparentBlack"/>
         </shape>
     </item>
 
-    <item android:drawable="@drawable/ic_main_switch_off"
-        android:left="23dp"
-        android:right="23dp"
-        android:top="9dp"
-        android:bottom="9dp"/>
+<!--    <item android:drawable="@drawable/ic_main_switch_off"-->
+<!--        android:left="23dp"-->
+<!--        android:right="23dp"-->
+<!--        android:top="9dp"-->
+<!--        android:bottom="9dp"/>-->
 </layer-list>

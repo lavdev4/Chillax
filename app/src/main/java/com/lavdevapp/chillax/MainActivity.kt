@@ -1,10 +1,16 @@
 package com.lavdevapp.chillax
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.app.TimePickerDialog
 import android.content.*
+import android.graphics.Color
+import android.graphics.drawable.TransitionDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.View
+import android.widget.CompoundButton
 import android.widget.TimePicker
 import androidx.activity.addCallback
 import androidx.activity.viewModels
@@ -16,8 +22,8 @@ import com.lavdevapp.chillax.PlayersService.PlayersServiceBinder
 import com.lavdevapp.chillax.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
-    private lateinit var binding: ActivityMainBinding
     private val viewModel by viewModels<AppViewModel>()
+    private lateinit var binding: ActivityMainBinding
     private lateinit var tracksListAdapter: TracksListAdapter
     private lateinit var playersService: PlayersService
     private lateinit var serviceConnection: ServiceConnection
@@ -96,6 +102,9 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
     private fun setupMainSwitch() {
         with(binding.mainSwitch) {
             setOnClickListener { viewModel.setMainSwitchState(isChecked) }
+            setOnCheckedChangeListener { compoundButton, checked ->
+                initMainSwitchBackgroundTransitions(compoundButton, checked)
+            }
             isSaveEnabled = false
         }
         observeMainSwitchState()
@@ -191,6 +200,48 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             override fun onServiceDisconnected(name: ComponentName?) {
                 serviceBound = false
             }
+        }
+    }
+
+    private fun initMainSwitchBackgroundTransitions(
+        compoundButton: CompoundButton,
+        checked: Boolean,
+    ) {
+        val animationsDuration = 300L
+        val colorAccent: Int
+        val colorAccentDark: Int
+        val colorTransparentBlack: Int
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            colorAccent = resources.getColor(R.color.accent, theme)
+            colorAccentDark = resources.getColor(R.color.accentDark, theme)
+            colorTransparentBlack = resources.getColor(R.color.transparentBlack, theme)
+        } else {
+            colorAccent = resources.getColor(R.color.accent)
+            colorAccentDark = resources.getColor(R.color.accentDark)
+            colorTransparentBlack = resources.getColor(R.color.transparentBlack)
+        }
+        val backgroundTransition = (compoundButton.background as TransitionDrawable).apply {
+            isCrossFadeEnabled = true
+        }
+        val textColorAnimator = ObjectAnimator
+            .ofArgb(compoundButton, "textColor", colorTransparentBlack, colorAccent)
+            .setDuration(animationsDuration)
+        val textShadowColorAnimator =
+            ValueAnimator.ofArgb(Color.TRANSPARENT, colorAccentDark).apply {
+                duration = animationsDuration
+                addUpdateListener {
+                    compoundButton
+                        .setShadowLayer(8.0f, 0.0f, 0.0f, it.animatedValue as Int)
+                }
+            }
+        if (checked) {
+            backgroundTransition.startTransition(animationsDuration.toInt())
+            textColorAnimator.start()
+            textShadowColorAnimator.start()
+        } else {
+            backgroundTransition.reverseTransition(animationsDuration.toInt())
+            textColorAnimator.reverse()
+            textShadowColorAnimator.reverse()
         }
     }
 }

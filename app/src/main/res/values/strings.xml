@@ -7,4 +7,8 @@
     <string name="timer_default_text">00:00</string>
     <string name="notification_action_stop_timer">Discard timer</string>
     <string name="notification_action_stop_playback">Stop playback</string>
+    <string name="button_main_switch_state_on_text">Pause</string>
+    <string name="button_main_switch_state_off_text">Play</string>
+    <string name="timer_dialog_message">Playback will stop when the timer expires</string>
+    <string name="timer_dialog_title">Set timer</string>
 </resources>

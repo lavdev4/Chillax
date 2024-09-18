@@ -3,7 +3,12 @@ package com.lavdevapp.chillax
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.TimePickerDialog
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.graphics.drawable.TransitionDrawable
 import android.os.Build
@@ -15,6 +20,7 @@ import android.widget.TimePicker
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
@@ -144,7 +150,12 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
             addAction(PlayersService.BROADCAST_ACTION_STOP_TIMER)
             addAction(PlayersService.BROADCAST_ACTION_STOP_PLAYERS)
         }
-        registerReceiver(broadcastReceiver, intentFilter)
+        ContextCompat.registerReceiver(
+            applicationContext,
+            broadcastReceiver,
+            intentFilter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     private fun observeTrackListState() {

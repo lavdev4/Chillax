@@ -11,7 +11,6 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.graphics.Color
 import android.graphics.drawable.TransitionDrawable
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.View
@@ -219,18 +218,9 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         checked: Boolean,
     ) {
         val animationsDuration = 300L
-        val colorAccent: Int
-        val colorAccentDark: Int
-        val colorTransparentBlack: Int
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            colorAccent = resources.getColor(R.color.accent, theme)
-            colorAccentDark = resources.getColor(R.color.accentDark, theme)
-            colorTransparentBlack = resources.getColor(R.color.transparentBlack, theme)
-        } else {
-            colorAccent = resources.getColor(R.color.accent)
-            colorAccentDark = resources.getColor(R.color.accentDark)
-            colorTransparentBlack = resources.getColor(R.color.transparentBlack)
-        }
+        val colorAccent: Int = resources.getColor(R.color.accent, theme)
+        val colorAccentDark: Int = resources.getColor(R.color.accentDark, theme)
+        val colorTransparentBlack: Int = resources.getColor(R.color.transparentBlack, theme)
         val backgroundTransition = (compoundButton.background as TransitionDrawable).apply {
             isCrossFadeEnabled = true
         }

@@ -57,13 +57,13 @@ class TracksListAdapter(
         init {
             with(binding.playerSwitch) {
                 setOnClickListener {
-                    val actualItem = getItem(adapterPosition)
+                    val actualItem = getItem(absoluteAdapterPosition)
                     onItemChangedCallback(actualItem, isChecked, actualItem.isFavourite)
                 }
             }
             with(binding.playerFavourites) {
                 setOnClickListener {
-                    val actualItem = getItem(adapterPosition)
+                    val actualItem = getItem(absoluteAdapterPosition)
                     onItemChangedCallback(actualItem, actualItem.isPlaying, isChecked)
                 }
             }
